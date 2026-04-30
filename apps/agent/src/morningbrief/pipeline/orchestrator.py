@@ -13,13 +13,45 @@ from morningbrief.data.supabase_client import (
 from morningbrief.llm.base import LLM, OpenAILLM
 from morningbrief.pipeline.graph import build_graph
 from morningbrief.pipeline.render import render_report
+from morningbrief.pipeline.outcomes import update_outcomes
+from morningbrief.pipeline.send import send_report
 
 log = logging.getLogger(__name__)
 
 
-def run_for_date(report_date: date, llm: LLM | None = None) -> str:
+def _load_unprocessed_signals(client, lookback_days: int = 10) -> list[tuple[str, str, date]]:
+    """Return (signal_id, ticker, signal_date) for recent BUY/SELL signals to evaluate outcomes."""
+    cutoff_iso = date.fromordinal(date.today().toordinal() - lookback_days).isoformat()
+    resp = (
+        client.table("signals")
+        .select("id, ticker, reports!inner(date)")
+        .gte("reports.date", cutoff_iso)
+        .in_("signal", ["BUY", "SELL"])
+        .execute()
+    )
+    out = []
+    for row in resp.data or []:
+        rdate = row.get("reports", {}).get("date")
+        if rdate:
+            out.append((row["id"], row["ticker"], date.fromisoformat(rdate)))
+    return out
+
+
+def run_for_date(
+    report_date: date,
+    llm: LLM | None = None,
+    send: bool = False,
+    site_url: str = "https://reseeall.com",
+) -> str:
     client = get_client()
     llm = llm or OpenAILLM()
+
+    if send:
+        try:
+            n = update_outcomes(client, _load_unprocessed_signals(client), today=report_date)
+            log.info("Updated outcomes for %d signals", n)
+        except Exception:
+            log.exception("Outcomes update failed; continuing")
 
     universe = {}
     for ticker in TICKERS:
@@ -28,23 +60,28 @@ def run_for_date(report_date: date, llm: LLM | None = None) -> str:
         universe[ticker] = {"prices": prices, "financials": financials}
 
     initial = {
-        "report_date": report_date,
-        "universe": universe,
-        "fundamentals": {}, "risks": {},
-        "top3": [],
-        "bulls": {}, "bears": {}, "verdicts": {},
-        "signals": [],
+        "report_date": report_date, "universe": universe,
+        "fundamentals": {}, "risks": {}, "top3": [],
+        "bulls": {}, "bears": {}, "verdicts": {}, "signals": [],
     }
 
     graph = build_graph(llm=llm)
     final = graph.invoke(initial)
 
     body_md = render_report(final, prior_outcomes=[])
+    report = {"date": report_date.isoformat(), "body_md": body_md, "trace_url": None, "cost_usd": 0.0}
+    rid = save_report_with_signals(client, report, final["signals"])
 
-    report = {
-        "date": report_date.isoformat(),
-        "body_md": body_md,
-        "trace_url": None,
-        "cost_usd": 0.0,
-    }
-    return save_report_with_signals(client, report, final["signals"])
+    if send:
+        try:
+            sent = send_report(
+                client=client, site_url=site_url,
+                report_date=report_date.isoformat(),
+                subject=f"MorningBrief — {report_date.isoformat()}",
+                body_md=body_md,
+            )
+            log.info("Sent report to %d subscribers", sent)
+        except Exception:
+            log.exception("Send failed")
+
+    return rid
