@@ -1,6 +1,6 @@
 import os
 from dataclasses import asdict
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import Any
 
 from supabase import create_client, Client
@@ -46,3 +46,40 @@ def insert_filings(client: Client, rows: list[FilingRow]) -> None:
         return
     payload = [_row_to_dict(r) for r in rows]
     client.table("filings").insert(payload).execute()
+
+
+def save_report_with_signals(client: Client, report: dict, signals: list[dict]) -> str:
+    """Insert a report row, then signals tagged with the new report's id. Returns the report id."""
+    resp = client.table("reports").insert(report).execute()
+    report_id = resp.data[0]["id"]
+    if signals:
+        rows = [{**s, "report_id": report_id} for s in signals]
+        client.table("signals").insert(rows).execute()
+    return report_id
+
+
+def load_recent_prices(client: Client, ticker: str, days: int, as_of: date) -> list[dict]:
+    """Return prices for `ticker` in [as_of - days, as_of], oldest first."""
+    start = (as_of - timedelta(days=days)).isoformat()
+    resp = (
+        client.table("prices")
+        .select("*")
+        .eq("ticker", ticker)
+        .gte("date", start)
+        .order("date", desc=False)
+        .execute()
+    )
+    return resp.data
+
+
+def load_latest_financials(client: Client, ticker: str, n: int = 4) -> list[dict]:
+    """Return up to `n` most recent financial periods for `ticker`."""
+    resp = (
+        client.table("financials")
+        .select("*")
+        .eq("ticker", ticker)
+        .order("filed_at", desc=True)
+        .limit(n)
+        .execute()
+    )
+    return resp.data

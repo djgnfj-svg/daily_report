@@ -48,3 +48,58 @@ def test_upsert_financials_serializes_dates():
     payload = mock_client.table.return_value.upsert.call_args[0][0]
     assert payload[0]["filed_at"] == "2026-01-30"
     assert payload[0]["period"] == "2026Q1"
+
+
+# Task P2-2: load helpers + save_report_with_signals
+from morningbrief.data.supabase_client import (
+    save_report_with_signals,
+    load_recent_prices,
+    load_latest_financials,
+)
+
+
+def test_save_report_with_signals_inserts_report_then_signals():
+    mock_client = MagicMock()
+    insert_chain = mock_client.table.return_value.insert.return_value
+    insert_chain.execute.return_value.data = [{"id": "REPORT-UUID"}]
+
+    report = {"date": "2026-05-01", "body_md": "# hi", "trace_url": None, "cost_usd": 0.05}
+    signals = [
+        {"ticker": "NVDA", "signal": "BUY", "confidence": 70, "thesis": "...", "is_top_pick": True},
+        {"ticker": "AAPL", "signal": "HOLD", "confidence": 55, "thesis": "...", "is_top_pick": False},
+    ]
+
+    report_id = save_report_with_signals(mock_client, report, signals)
+
+    assert report_id == "REPORT-UUID"
+    assert mock_client.table.call_args_list[0].args == ("reports",)
+    assert mock_client.table.call_args_list[1].args == ("signals",)
+    inserted_signals = mock_client.table.return_value.insert.call_args_list[1].args[0]
+    assert inserted_signals[0]["report_id"] == "REPORT-UUID"
+    assert inserted_signals[0]["ticker"] == "NVDA"
+
+
+def test_load_recent_prices_queries_with_date_filter():
+    mock_client = MagicMock()
+    chain = mock_client.table.return_value.select.return_value.eq.return_value.gte.return_value.order.return_value
+    chain.execute.return_value.data = [
+        {"ticker": "NVDA", "date": "2026-04-29", "open": 1, "high": 2, "low": 0.5, "close": 1.5, "volume": 100},
+    ]
+
+    rows = load_recent_prices(mock_client, "NVDA", days=90, as_of=date(2026, 4, 30))
+
+    mock_client.table.assert_called_with("prices")
+    assert len(rows) == 1
+    assert rows[0]["ticker"] == "NVDA"
+
+
+def test_load_latest_financials_returns_n_rows():
+    mock_client = MagicMock()
+    chain = mock_client.table.return_value.select.return_value.eq.return_value.order.return_value.limit.return_value
+    chain.execute.return_value.data = [
+        {"ticker": "AAPL", "period": "2026Q1", "revenue": 1.0, "net_income": 0.1, "eps": 1, "fcf": None,
+         "total_debt": 0.5, "total_equity": 0.5, "source": "10-Q", "filed_at": "2026-01-30"},
+    ]
+    rows = load_latest_financials(mock_client, "AAPL", n=4)
+    mock_client.table.return_value.select.return_value.eq.return_value.order.return_value.limit.assert_called_with(4)
+    assert len(rows) == 1
