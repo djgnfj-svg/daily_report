@@ -87,3 +87,23 @@ def test_fetch_recent_filings_filters_by_since():
     rows = fetch_recent_filings("AAPL", since=date(2026, 4, 20), form_types=("8-K",))
     assert len(rows) == 1
     assert rows[0].filed_at.date() == date(2026, 4, 29)
+
+
+# Task P2-1: multi-tag revenue fallback
+AMZN_FIXTURE = Path(__file__).parent / "fixtures" / "edgar_amzn_facts.json"
+
+
+@responses.activate
+def test_fetch_quarterly_financials_falls_back_to_alternate_revenue_tag():
+    cik_padded = str(TICKER_TO_CIK["AMZN"]).zfill(10)
+    responses.add(
+        responses.GET,
+        f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik_padded}.json",
+        json=json.loads(AMZN_FIXTURE.read_text()),
+        status=200,
+    )
+
+    rows = fetch_quarterly_financials("AMZN", n=4)
+    assert len(rows) == 4
+    assert rows[0].revenue == 158_000_000_000
+    assert rows[0].period == "2026Q1"

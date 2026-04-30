@@ -48,6 +48,14 @@ def _period_label(fp: str, fy: int) -> str:
     return f"{fy}{fp}"
 
 
+REVENUE_TAGS = (
+    "Revenues",
+    "RevenueFromContractWithCustomerExcludingAssessedTax",
+    "SalesRevenueNet",
+    "RevenueFromContractWithCustomerIncludingAssessedTax",
+)
+
+
 def _index_concept(facts: dict, tag: str, unit: str) -> dict[str, dict]:
     """Return {period_label: entry}, keeping latest filing per period."""
     entries = (
@@ -65,13 +73,21 @@ def _index_concept(facts: dict, tag: str, unit: str) -> dict[str, dict]:
     return out
 
 
+def _index_first_nonempty(facts: dict, tags: tuple[str, ...], unit: str) -> dict[str, dict]:
+    for tag in tags:
+        idx = _index_concept(facts, tag, unit)
+        if idx:
+            return idx
+    return {}
+
+
 def fetch_quarterly_financials(ticker: str, n: int = 4) -> list[FinancialRow]:
     """Return the most recent `n` quarterly/annual periods, newest first."""
     if ticker not in TICKER_TO_CIK:
         raise ValueError(f"Unknown ticker: {ticker}")
     facts = _fetch_company_facts(TICKER_TO_CIK[ticker])
 
-    revenue = _index_concept(facts, "Revenues", "USD")
+    revenue = _index_first_nonempty(facts, REVENUE_TAGS, "USD")
     net_income = _index_concept(facts, "NetIncomeLoss", "USD")
     eps = _index_concept(facts, "EarningsPerShareBasic", "USD/shares")
     debt = _index_concept(facts, "LongTermDebt", "USD")
