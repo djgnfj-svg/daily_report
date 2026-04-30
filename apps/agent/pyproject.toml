@@ -13,6 +13,8 @@ dependencies = [
   "openai>=1.50",
   "langgraph>=0.2",
   "langfuse>=2.40",
+  "resend>=2.0",
+  "markdown>=3.6",
 ]
 
 [project.optional-dependencies]
