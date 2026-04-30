@@ -23,29 +23,7 @@ def _node_analyze_universe(state: PipelineState, llm: LLM) -> dict:
 
 
 def _node_select_top3(state: PipelineState) -> dict:
-    # Compute scores for all tickers
-    scored = [
-        (t, 0.6 * state["fundamentals"][t].score + 0.4 * state["risks"][t].score)
-        for t in state["fundamentals"]
-        if t in state["risks"]
-    ]
-    # Sort by score descending
-    scored.sort(key=lambda x: x[1], reverse=True)
-
-    # Collect all tickers, with tied ones in reverse order
-    result = []
-    prev_score = None
-    current_batch = []
-    for t, s in scored:
-        if s != prev_score and current_batch:
-            result.extend(reversed(current_batch))
-            current_batch = []
-            prev_score = s
-        current_batch.append(t)
-    if current_batch:
-        result.extend(reversed(current_batch))
-
-    return {"top3": result[:3]}
+    return {"top3": top_picks(state["fundamentals"], state["risks"], n=3)}
 
 
 def _node_debate_top3(state: PipelineState, llm: LLM) -> dict:

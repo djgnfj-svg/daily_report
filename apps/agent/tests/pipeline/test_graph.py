@@ -9,11 +9,16 @@ from morningbrief.agents.debate import BullCase, BearCase, Verdict
 
 
 def test_graph_runs_end_to_end_with_stub_agents(monkeypatch):
+    fund_scores = {"NVDA": 90, "MSFT": 80, "GOOGL": 70, "AAPL": 30, "AMZN": 35,
+                   "META": 40, "TSLA": 45, "AVGO": 50, "ORCL": 55, "NFLX": 60}
+    risk_scores = {"NVDA": 70, "MSFT": 65, "GOOGL": 60, "AAPL": 40, "AMZN": 40,
+                   "META": 40, "TSLA": 40, "AVGO": 40, "ORCL": 40, "NFLX": 40}
+
     def fake_fund(llm, ticker, financials, last_close):
-        return FundamentalResult(ticker, score=80 if ticker == "NVDA" else 50, summary="f", key_metrics={})
+        return FundamentalResult(ticker, score=fund_scores[ticker], summary="f", key_metrics={})
 
     def fake_risk(llm, ticker, prices):
-        return RiskResult(ticker, score=70 if ticker == "NVDA" else 40, summary="r",
+        return RiskResult(ticker, score=risk_scores[ticker], summary="r",
                           metrics={"volatility_pct": 30, "max_drawdown_pct": -10, "sharpe_naive": 1.0})
 
     def fake_bull(llm, ticker, f, r):
