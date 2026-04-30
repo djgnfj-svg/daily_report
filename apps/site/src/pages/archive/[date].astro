@@ -1,0 +1,23 @@
+---
+export const prerender = false;
+import Base from "@/layouts/Base.astro";
+import { adminClient } from "@/lib/supabase";
+import { marked } from "marked";
+
+const { date } = Astro.params;
+const { data, error } = await adminClient()
+  .from("reports")
+  .select("date, body_md")
+  .eq("date", date)
+  .maybeSingle();
+
+if (error || !data) {
+  return new Response("Not found", { status: 404 });
+}
+
+const html = marked.parse(data.body_md ?? "");
+---
+<Base title={`${data.date} · MorningBrief`}>
+  <div class="text-slate-800 leading-relaxed [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:mt-8 [&_h2]:text-2xl [&_h2]:font-semibold [&_h2]:mt-6 [&_h3]:text-xl [&_h3]:font-semibold [&_h3]:mt-4 [&_table]:my-4 [&_th]:text-left [&_th]:px-2 [&_td]:px-2 [&_blockquote]:border-l-4 [&_blockquote]:border-slate-300 [&_blockquote]:pl-4 [&_blockquote]:my-3 [&_blockquote]:text-slate-600" set:html={html} />
+  <p class="mt-12"><a class="underline" href="/archive">← 아카이브로</a></p>
+</Base>

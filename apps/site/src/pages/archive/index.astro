@@ -1,0 +1,19 @@
+---
+export const prerender = false;
+import Base from "@/layouts/Base.astro";
+import { adminClient } from "@/lib/supabase";
+
+const { data: reports } = await adminClient()
+  .from("reports")
+  .select("date")
+  .order("date", { ascending: false })
+  .limit(60);
+---
+<Base title="아카이브 · MorningBrief">
+  <h1 class="text-3xl font-bold">아카이브</h1>
+  <ul class="mt-6 space-y-2">
+    {(reports ?? []).map((r) => (
+      <li><a class="underline text-slate-800" href={`/archive/${r.date}`}>{r.date}</a></li>
+    ))}
+  </ul>
+</Base>
