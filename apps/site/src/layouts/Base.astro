@@ -1,0 +1,23 @@
+---
+import "@/styles/global.css";
+const { title = "MorningBrief", description = "AI 멀티에이전트가 분석한 미국 빅테크 10종 일일 뉴스레터" } = Astro.props;
+---
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+  </head>
+  <body class="bg-slate-50 text-slate-900 min-h-screen">
+    <main class="max-w-3xl mx-auto px-6 py-12">
+      <slot />
+    </main>
+    <footer class="max-w-3xl mx-auto px-6 py-8 text-sm text-slate-500">
+      <a href="/privacy" class="hover:underline">개인정보처리방침</a> ·
+      <a href="/about" class="hover:underline">소개</a> ·
+      <a href="/archive" class="hover:underline">아카이브</a>
+    </footer>
+  </body>
+</html>
