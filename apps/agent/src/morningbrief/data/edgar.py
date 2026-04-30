@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime, timezone
 from typing import Any
 
 import requests
@@ -93,5 +93,54 @@ def fetch_quarterly_financials(ticker: str, n: int = 4) -> list[FinancialRow]:
             total_equity=float(equity[p]["val"]) if p in equity else None,
             source=rev["form"],
             filed_at=date.fromisoformat(rev["filed"]),
+        ))
+    return rows
+
+
+# ----- Task 8: filings -----
+
+@dataclass(frozen=True)
+class FilingRow:
+    ticker: str
+    form_type: str
+    filed_at: datetime
+    url: str
+
+
+def _fetch_submissions(cik: int) -> dict[str, Any]:
+    cik_padded = str(cik).zfill(10)
+    url = f"https://data.sec.gov/submissions/CIK{cik_padded}.json"
+    resp = requests.get(url, headers={"User-Agent": USER_AGENT}, timeout=20)
+    resp.raise_for_status()
+    return resp.json()
+
+
+def fetch_recent_filings(
+    ticker: str,
+    since: date,
+    form_types: tuple[str, ...] = ("8-K",),
+) -> list[FilingRow]:
+    """Return filings of given form types filed on/after `since`, newest first."""
+    if ticker not in TICKER_TO_CIK:
+        raise ValueError(f"Unknown ticker: {ticker}")
+    cik = TICKER_TO_CIK[ticker]
+    data = _fetch_submissions(cik)
+    recent = data["filings"]["recent"]
+
+    rows: list[FilingRow] = []
+    for i, form in enumerate(recent["form"]):
+        if form not in form_types:
+            continue
+        filed = date.fromisoformat(recent["filingDate"][i])
+        if filed < since:
+            continue
+        accession = recent["accessionNumber"][i].replace("-", "")
+        primary = recent["primaryDocument"][i]
+        url = f"https://www.sec.gov/Archives/edgar/data/{cik}/{accession}/{primary}"
+        rows.append(FilingRow(
+            ticker=ticker,
+            form_type=form,
+            filed_at=datetime(filed.year, filed.month, filed.day, tzinfo=timezone.utc),
+            url=url,
         ))
     return rows

@@ -45,3 +45,45 @@ def test_fetch_quarterly_financials_returns_recent_quarters():
 def test_ticker_to_cik_covers_all_ten():
     expected = {"AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "TSLA", "AVGO", "ORCL", "NFLX"}
     assert expected.issubset(TICKER_TO_CIK.keys())
+
+
+# Task 8: filings tests
+SUBM_FIXTURE = Path(__file__).parent / "fixtures" / "edgar_aapl_submissions.json"
+
+
+@responses.activate
+def test_fetch_recent_filings_8k_only():
+    from morningbrief.data.edgar import fetch_recent_filings
+
+    cik_padded = str(TICKER_TO_CIK["AAPL"]).zfill(10)
+    responses.add(
+        responses.GET,
+        f"https://data.sec.gov/submissions/CIK{cik_padded}.json",
+        json=json.loads(SUBM_FIXTURE.read_text()),
+        status=200,
+    )
+
+    rows = fetch_recent_filings("AAPL", since=date(2026, 4, 1), form_types=("8-K",))
+
+    assert len(rows) == 2
+    assert rows[0].ticker == "AAPL"
+    assert rows[0].form_type == "8-K"
+    assert rows[0].filed_at.date() == date(2026, 4, 29)
+    assert "aapl_8k_20260429.htm" in rows[0].url
+
+
+@responses.activate
+def test_fetch_recent_filings_filters_by_since():
+    from morningbrief.data.edgar import fetch_recent_filings
+
+    cik_padded = str(TICKER_TO_CIK["AAPL"]).zfill(10)
+    responses.add(
+        responses.GET,
+        f"https://data.sec.gov/submissions/CIK{cik_padded}.json",
+        json=json.loads(SUBM_FIXTURE.read_text()),
+        status=200,
+    )
+
+    rows = fetch_recent_filings("AAPL", since=date(2026, 4, 20), form_types=("8-K",))
+    assert len(rows) == 1
+    assert rows[0].filed_at.date() == date(2026, 4, 29)
