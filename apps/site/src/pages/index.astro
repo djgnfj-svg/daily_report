@@ -1,8 +1,24 @@
 ---
 import Base from "@/layouts/Base.astro";
+import SubscribeForm from "@/components/SubscribeForm.astro";
 ---
-<Base title="MorningBrief">
-  <h1 class="text-4xl font-bold mb-6">MorningBrief</h1>
-  <p class="text-lg text-slate-700">매일 아침 6시(KST), AI 멀티 에이전트가 분석한 미국 빅테크 10종 뉴스레터.</p>
-  <p class="mt-8 text-slate-500">[구독 폼은 Task 3에서 추가됩니다]</p>
+<Base title="MorningBrief — AI 주식 뉴스레터">
+  <h1 class="text-4xl sm:text-5xl font-bold tracking-tight">MorningBrief</h1>
+  <p class="text-xl text-slate-700 mt-4">매일 아침 6시(KST), AI 멀티 에이전트가 분석한 미국 빅테크 10종.</p>
+
+  <section class="mt-10">
+    <h2 class="text-lg font-semibold mb-2">무엇이 들어있나요?</h2>
+    <ul class="list-disc pl-5 text-slate-700 space-y-1">
+      <li>Top 3 종목 — Bull-Bear 디베이트 + 최종 시그널 (BUY / HOLD / SELL)</li>
+      <li>나머지 7종 한 줄 요약 표</li>
+      <li>어제 시그널의 1일 수익률 자동 검증 (vs SPY)</li>
+      <li><a class="underline" href="/archive">공개 아카이브</a></li>
+    </ul>
+  </section>
+
+  <SubscribeForm />
+
+  <p class="mt-12 text-xs text-slate-500">
+    본 메일은 정보 제공 목적이며 투자 자문이 아닙니다. 모든 투자 결정의 책임은 본인에게 있습니다.
+  </p>
 </Base>

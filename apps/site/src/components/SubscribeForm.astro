@@ -1,0 +1,36 @@
+<form id="subscribe-form" class="flex flex-col sm:flex-row gap-3 mt-8 max-w-md">
+  <input
+    type="email" name="email" required placeholder="you@example.com"
+    class="flex-1 px-4 py-3 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-900"
+  />
+  <button type="submit" class="px-6 py-3 rounded-lg bg-slate-900 text-white font-semibold hover:bg-slate-800">
+    구독하기
+  </button>
+</form>
+<p id="subscribe-msg" class="mt-3 text-sm h-5"></p>
+
+<script>
+  const form = document.getElementById("subscribe-form") as HTMLFormElement;
+  const msg = document.getElementById("subscribe-msg") as HTMLParagraphElement;
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    msg.textContent = "전송 중...";
+    msg.className = "mt-3 text-sm h-5 text-slate-500";
+    const fd = new FormData(form);
+    const email = String(fd.get("email") ?? "");
+    const r = await fetch("/api/subscribe", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    if (r.ok) {
+      msg.textContent = "메일을 보냈습니다. 받은편지함에서 구독을 확인해 주세요.";
+      msg.className = "mt-3 text-sm h-5 text-emerald-700";
+      form.reset();
+    } else {
+      const data = await r.json().catch(() => ({}));
+      msg.textContent = data.error ?? "오류가 발생했습니다.";
+      msg.className = "mt-3 text-sm h-5 text-red-600";
+    }
+  });
+</script>
