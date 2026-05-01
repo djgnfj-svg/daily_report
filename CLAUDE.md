@@ -29,6 +29,7 @@
 3. **가공**(`indicators.py`) — `compute_indicators(prices)` 결정적 계산: MA20/60/200, RSI14, 52주 위치%, 거래량비(20일). DB 미저장, 메모리 dict로만 LLM에 전달
 4. **분석**(LangGraph: `pipeline/graph.py`) — `analyze_universe`(종목별 fundamental+risk LLM, 지표 dict 주입) → `select_top3`(가중합 결정적) → `debate_top3`(bull/bear/supervisor) → `assemble_signals`
 5. **렌더 + 저장 + 발송** — Markdown → `reports`/`signals` 테이블 → Resend
+6. **분석/가공 이력 적재** — `daily_metrics`(결정적: MA·RSI·52w·vol/MDD/Sharpe) + `daily_scores`(LLM: fundamental/risk score·summary, combined, is_top_pick, model). 재현 검증·하네스 평가용
 
 ### 가격 윈도우
 - backfill: 400 캘린더일 (수동 시드용 `scripts/backfill.py`, 보통은 ingest가 자동 처리)

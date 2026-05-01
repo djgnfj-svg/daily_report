@@ -48,6 +48,18 @@ def insert_filings(client: Client, rows: list[FilingRow]) -> None:
     client.table("filings").insert(payload).execute()
 
 
+def upsert_daily_metrics(client: Client, rows: list[dict]) -> None:
+    if not rows:
+        return
+    client.table("daily_metrics").upsert(rows).execute()
+
+
+def upsert_daily_scores(client: Client, rows: list[dict]) -> None:
+    if not rows:
+        return
+    client.table("daily_scores").upsert(rows).execute()
+
+
 def save_report_with_signals(client: Client, report: dict, signals: list[dict]) -> str:
     """Insert a report row, then signals tagged with the new report's id. Returns the report id."""
     resp = client.table("reports").insert(report).execute()

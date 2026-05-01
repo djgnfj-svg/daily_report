@@ -14,10 +14,12 @@ from morningbrief.pipeline.state import PipelineState
 def _node_analyze_universe(state: PipelineState, llm: LLM) -> dict:
     fundamentals = {}
     risks = {}
+    all_indicators: dict[str, dict] = {}
     for ticker, inputs in state["universe"].items():
         prices = inputs["prices"]
         last_close = prices[-1]["close"] if prices else 0.0
         indicators = compute_indicators(prices) if prices else {}
+        all_indicators[ticker] = indicators
         fundamentals[ticker] = analyze_fundamental(
             llm=llm, ticker=ticker, financials=inputs["financials"],
             last_close=last_close, indicators=indicators,
@@ -25,7 +27,7 @@ def _node_analyze_universe(state: PipelineState, llm: LLM) -> dict:
         risks[ticker] = analyze_risk(
             llm=llm, ticker=ticker, prices=prices, indicators=indicators,
         )
-    return {"fundamentals": fundamentals, "risks": risks}
+    return {"fundamentals": fundamentals, "risks": risks, "indicators": all_indicators}
 
 
 def _node_select_top3(state: PipelineState) -> dict:

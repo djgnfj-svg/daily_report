@@ -14,6 +14,7 @@ class TickerInputs(TypedDict):
 class PipelineState(TypedDict):
     report_date: date
     universe: dict[str, TickerInputs]
+    indicators: dict[str, dict]
     fundamentals: dict[str, FundamentalResult]
     risks: dict[str, RiskResult]
     top3: list[str]
