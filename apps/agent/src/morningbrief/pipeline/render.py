@@ -2,7 +2,6 @@ from morningbrief.pipeline.state import PipelineState
 
 
 def _format_top_section(state: PipelineState, ticker: str, idx: int) -> str:
-    f = state["fundamentals"][ticker]
     r = state["risks"][ticker]
     bull = state["bulls"][ticker]
     bear = state["bears"][ticker]

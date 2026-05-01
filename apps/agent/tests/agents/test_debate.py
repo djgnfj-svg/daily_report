@@ -2,7 +2,7 @@ from unittest.mock import MagicMock
 
 from morningbrief.agents.debate import (
     bull_case, bear_case, supervisor,
-    BullCase, BearCase, Verdict,
+    BullCase, BearCase,
 )
 from morningbrief.agents.fundamental import FundamentalResult
 from morningbrief.agents.risk import RiskResult

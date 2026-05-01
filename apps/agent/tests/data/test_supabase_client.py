@@ -1,7 +1,13 @@
 from datetime import date
 from unittest.mock import MagicMock
 
-from morningbrief.data.supabase_client import upsert_prices, upsert_financials
+from morningbrief.data.supabase_client import (
+    upsert_prices,
+    upsert_financials,
+    save_report_with_signals,
+    load_recent_prices,
+    load_latest_financials,
+)
 from morningbrief.data.yf import PriceRow
 from morningbrief.data.edgar import FinancialRow
 
@@ -48,14 +54,6 @@ def test_upsert_financials_serializes_dates():
     payload = mock_client.table.return_value.upsert.call_args[0][0]
     assert payload[0]["filed_at"] == "2026-01-30"
     assert payload[0]["period"] == "2026Q1"
-
-
-# Task P2-2: load helpers + save_report_with_signals
-from morningbrief.data.supabase_client import (
-    save_report_with_signals,
-    load_recent_prices,
-    load_latest_financials,
-)
 
 
 def test_save_report_with_signals_inserts_report_then_signals():

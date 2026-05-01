@@ -8,8 +8,8 @@ def fake_yf_history():
     def _make(rows):
         # rows: list[(date_str, open, high, low, close, volume)]
         df = pd.DataFrame(
-            [{"Open": o, "High": h, "Low": l, "Close": c, "Volume": v}
-             for _, o, h, l, c, v in rows],
+            [{"Open": o, "High": h, "Low": lo, "Close": c, "Volume": v}
+             for _, o, h, lo, c, v in rows],
             index=pd.DatetimeIndex([d for d, *_ in rows], name="Date"),
         )
         return df
