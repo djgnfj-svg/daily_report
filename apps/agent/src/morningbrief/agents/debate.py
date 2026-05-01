@@ -6,6 +6,7 @@ from morningbrief.llm.base import LLM
 from morningbrief.llm.prompts import BULL_SYSTEM, BEAR_SYSTEM, SUPERVISOR_SYSTEM
 from morningbrief.agents.fundamental import FundamentalResult
 from morningbrief.agents.risk import RiskResult
+from morningbrief.utils import clamp
 
 
 Signal = Literal["BUY", "HOLD", "SELL"]
@@ -46,10 +47,6 @@ def _user_for_debate(ticker: str, f: FundamentalResult, r: RiskResult) -> str:
     )
 
 
-def _clamp(v: int, lo: int, hi: int) -> int:
-    return max(lo, min(hi, v))
-
-
 def bull_case(llm: LLM, ticker: str, f: FundamentalResult, r: RiskResult) -> BullCase:
     out = llm.complete_json(system=BULL_SYSTEM, user=_user_for_debate(ticker, f, r), tier="premium")
     return BullCase(
@@ -57,7 +54,7 @@ def bull_case(llm: LLM, ticker: str, f: FundamentalResult, r: RiskResult) -> Bul
         thesis=str(out.get("thesis", "")),
         key_metrics=list(out.get("key_metrics", [])),
         rebuttal=str(out.get("rebuttal", "")),
-        confidence=_clamp(int(out.get("confidence", 50)), 0, 100),
+        confidence=clamp(int(out.get("confidence", 50)), 0, 100),
     )
 
 
@@ -68,7 +65,7 @@ def bear_case(llm: LLM, ticker: str, f: FundamentalResult, r: RiskResult) -> Bea
         thesis=str(out.get("thesis", "")),
         key_metrics=list(out.get("key_metrics", [])),
         rebuttal=str(out.get("rebuttal", "")),
-        confidence=_clamp(int(out.get("confidence", 50)), 0, 100),
+        confidence=clamp(int(out.get("confidence", 50)), 0, 100),
     )
 
 
@@ -89,7 +86,7 @@ def supervisor(
     raw_signal = str(out.get("signal", "HOLD")).upper()
     if raw_signal not in ("BUY", "HOLD", "SELL"):
         raw_signal = "HOLD"
-    confidence = _clamp(int(out.get("confidence", 50)), 0, 100)
+    confidence = clamp(int(out.get("confidence", 50)), 0, 100)
     final_signal: Signal = "HOLD" if confidence < 60 else raw_signal  # type: ignore[assignment]
     return Verdict(
         ticker=ticker,

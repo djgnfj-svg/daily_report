@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 from morningbrief.llm.base import LLM
 from morningbrief.llm.prompts import FUNDAMENTAL_SYSTEM
+from morningbrief.utils import clamp
 
 
 @dataclass(frozen=True)
@@ -11,10 +12,6 @@ class FundamentalResult:
     score: int
     summary: str
     key_metrics: dict
-
-
-def _clamp(v: int, lo: int, hi: int) -> int:
-    return max(lo, min(hi, v))
 
 
 def analyze_fundamental(
@@ -31,7 +28,7 @@ def analyze_fundamental(
     out = llm.complete_json(system=FUNDAMENTAL_SYSTEM, user=user, tier="cheap")
     return FundamentalResult(
         ticker=ticker,
-        score=_clamp(int(out.get("score", 50)), 0, 100),
+        score=clamp(int(out.get("score", 50)), 0, 100),
         summary=str(out.get("summary", ""))[:240],
         key_metrics=dict(out.get("key_metrics", {})),
     )

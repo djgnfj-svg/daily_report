@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 from morningbrief.llm.base import LLM
 from morningbrief.llm.prompts import RISK_SYSTEM
+from morningbrief.utils import clamp
 
 
 @dataclass(frozen=True)
@@ -42,10 +43,6 @@ def _compute_metrics(prices: list[dict]) -> dict:
     }
 
 
-def _clamp(v: int, lo: int, hi: int) -> int:
-    return max(lo, min(hi, v))
-
-
 def analyze_risk(llm: LLM, ticker: str, prices: list[dict]) -> RiskResult:
     metrics = _compute_metrics(prices)
     user = (
@@ -56,7 +53,7 @@ def analyze_risk(llm: LLM, ticker: str, prices: list[dict]) -> RiskResult:
     out = llm.complete_json(system=RISK_SYSTEM, user=user, tier="cheap")
     return RiskResult(
         ticker=ticker,
-        score=_clamp(int(out.get("score", 50)), 0, 100),
+        score=clamp(int(out.get("score", 50)), 0, 100),
         summary=str(out.get("summary", ""))[:240],
         metrics=metrics,
     )

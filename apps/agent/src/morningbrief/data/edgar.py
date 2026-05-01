@@ -113,8 +113,6 @@ def fetch_quarterly_financials(ticker: str, n: int = 4) -> list[FinancialRow]:
     return rows
 
 
-# ----- Task 8: filings -----
-
 @dataclass(frozen=True)
 class FilingRow:
     ticker: str
