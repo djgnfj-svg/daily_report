@@ -28,7 +28,11 @@ Thumbs.db
 .vscode/
 *.swp
 
+# Claude Code
+.claude/
+
 # Data dumps
 *.csv
 *.parquet
 !apps/agent/tests/**/*.csv
+.mcp.json
