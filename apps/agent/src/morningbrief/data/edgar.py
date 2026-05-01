@@ -74,11 +74,18 @@ def _index_concept(facts: dict, tag: str, unit: str) -> dict[str, dict]:
 
 
 def _index_first_nonempty(facts: dict, tags: tuple[str, ...], unit: str) -> dict[str, dict]:
+    """Merge entries across all tags, keeping latest filing per period.
+
+    필러는 회계 표준 변경에 따라 분기별로 다른 revenue 태그를 사용하므로
+    첫 매칭 태그만 보면 옛날 데이터에 갇힐 수 있음 (예: AAPL은 'Revenues'에
+    2018년 데이터만 있고 최신은 'RevenueFromContract...' 태그에 있음).
+    """
+    merged: dict[str, dict] = {}
     for tag in tags:
-        idx = _index_concept(facts, tag, unit)
-        if idx:
-            return idx
-    return {}
+        for label, e in _index_concept(facts, tag, unit).items():
+            if label not in merged or e["filed"] > merged[label]["filed"]:
+                merged[label] = e
+    return merged
 
 
 def fetch_quarterly_financials(ticker: str, n: int = 4) -> list[FinancialRow]:

@@ -19,20 +19,25 @@ def send_report(
     report_date: str,
     subject: str,
     body_md: str,
+    only_to: str | None = None,
 ) -> int:
     """Send the rendered report to all confirmed subscribers via Resend.
 
+    only_to: 이 이메일만 대상으로 발송 (테스트용). DB 무시, 구독자 테이블 안 건드림.
     Returns count of attempted sends. Caller is expected to set RESEND_API_KEY env var.
     """
     resend.api_key = os.environ.get("RESEND_API_KEY", "")
 
-    resp = (
-        client.table("subscribers")
-        .select("email, unsub_token")
-        .eq("status", "confirmed")
-        .execute()
-    )
-    subscribers = resp.data or []
+    if only_to:
+        subscribers = [{"email": only_to, "unsub_token": "test"}]
+    else:
+        resp = (
+            client.table("subscribers")
+            .select("email, unsub_token")
+            .eq("status", "confirmed")
+            .execute()
+        )
+        subscribers = resp.data or []
     if not subscribers:
         log.info("No confirmed subscribers, skipping send.")
         return 0

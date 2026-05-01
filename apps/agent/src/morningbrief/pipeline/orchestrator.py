@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from datetime import date
 
 from morningbrief.data.tickers import TICKERS
@@ -90,9 +91,11 @@ def run_for_date(
     report_date: date,
     llm: LLM | None = None,
     send: bool = False,
-    site_url: str = "https://reseeall.com",
+    site_url: str | None = None,
+    only_to: str | None = None,
 ) -> str:
     client = get_client()
+    site_url = site_url or os.environ.get("SITE_URL", "https://reseeall.com")
     llm = llm or OpenAILLM()
 
     try:
@@ -148,6 +151,7 @@ def run_for_date(
                 report_date=report_date.isoformat(),
                 subject=f"MorningBrief — {report_date.isoformat()}",
                 body_md=body_md,
+                only_to=only_to,
             )
             log.info("Sent report to %d subscribers", sent)
         except Exception:

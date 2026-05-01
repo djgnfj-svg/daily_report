@@ -61,9 +61,10 @@ def upsert_daily_scores(client: Client, rows: list[dict]) -> None:
 
 
 def save_report_with_signals(client: Client, report: dict, signals: list[dict]) -> str:
-    """Insert a report row, then signals tagged with the new report's id. Returns the report id."""
-    resp = client.table("reports").insert(report).execute()
+    """Upsert a report by date, replace its signals. 같은 날짜 재실행 시 멱등."""
+    resp = client.table("reports").upsert(report, on_conflict="date").execute()
     report_id = resp.data[0]["id"]
+    client.table("signals").delete().eq("report_id", report_id).execute()
     if signals:
         rows = [{**s, "report_id": report_id} for s in signals]
         client.table("signals").insert(rows).execute()
