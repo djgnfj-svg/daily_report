@@ -19,11 +19,13 @@ def analyze_fundamental(
     ticker: str,
     financials: list[dict],
     last_close: float,
+    indicators: dict | None = None,
 ) -> FundamentalResult:
     user = (
         f"Ticker: {ticker}\n"
         f"Last close (USD): {last_close}\n"
         f"Financials (most recent first):\n{json.dumps(financials, default=str)}\n"
+        f"Technical indicators:\n{json.dumps(indicators or {})}\n"
     )
     out = llm.complete_json(system=FUNDAMENTAL_SYSTEM, user=user, tier="cheap")
     return FundamentalResult(

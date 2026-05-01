@@ -26,5 +26,5 @@ def test_backfill_runs_for_all_tickers():
 
         first_call_args = mp.call_args_list[0]
         ticker_arg, start_arg, end_arg = first_call_args.args
-        assert (end_arg - start_arg).days == 90
+        assert (end_arg - start_arg).days == 400
         assert end_arg == date(2026, 4, 30)

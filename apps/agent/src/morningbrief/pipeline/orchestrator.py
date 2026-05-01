@@ -12,6 +12,7 @@ from morningbrief.data.supabase_client import (
 )
 from morningbrief.llm.base import LLM, OpenAILLM
 from morningbrief.pipeline.graph import build_graph
+from morningbrief.pipeline.ingest import ingest_financials, ingest_prices
 from morningbrief.pipeline.render import render_report
 from morningbrief.pipeline.outcomes import update_outcomes
 from morningbrief.pipeline.send import send_report
@@ -46,6 +47,18 @@ def run_for_date(
     client = get_client()
     llm = llm or OpenAILLM()
 
+    try:
+        added = ingest_prices(client, report_date)
+        log.info("Ingested prices: %s", added)
+    except Exception:
+        log.exception("ingest_prices failed; continuing with existing DB rows")
+
+    try:
+        refreshed = ingest_financials(client, report_date)
+        log.info("Refreshed financials: %s", refreshed)
+    except Exception:
+        log.exception("ingest_financials failed; continuing")
+
     if send:
         try:
             n = update_outcomes(client, _load_unprocessed_signals(client), today=report_date)
@@ -55,7 +68,7 @@ def run_for_date(
 
     universe = {}
     for ticker in TICKERS:
-        prices = load_recent_prices(client, ticker, days=90, as_of=report_date)
+        prices = load_recent_prices(client, ticker, days=365, as_of=report_date)
         financials = load_latest_financials(client, ticker, n=4)
         universe[ticker] = {"prices": prices, "financials": financials}
 

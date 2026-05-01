@@ -6,6 +6,7 @@ from morningbrief.agents.fundamental import analyze_fundamental
 from morningbrief.agents.risk import analyze_risk
 from morningbrief.agents.scoring import top_picks
 from morningbrief.agents.debate import bull_case, bear_case, supervisor
+from morningbrief.indicators import compute_indicators
 from morningbrief.llm.base import LLM
 from morningbrief.pipeline.state import PipelineState
 
@@ -14,11 +15,16 @@ def _node_analyze_universe(state: PipelineState, llm: LLM) -> dict:
     fundamentals = {}
     risks = {}
     for ticker, inputs in state["universe"].items():
-        last_close = inputs["prices"][-1]["close"] if inputs["prices"] else 0.0
+        prices = inputs["prices"]
+        last_close = prices[-1]["close"] if prices else 0.0
+        indicators = compute_indicators(prices) if prices else {}
         fundamentals[ticker] = analyze_fundamental(
-            llm=llm, ticker=ticker, financials=inputs["financials"], last_close=last_close
+            llm=llm, ticker=ticker, financials=inputs["financials"],
+            last_close=last_close, indicators=indicators,
         )
-        risks[ticker] = analyze_risk(llm=llm, ticker=ticker, prices=inputs["prices"])
+        risks[ticker] = analyze_risk(
+            llm=llm, ticker=ticker, prices=prices, indicators=indicators,
+        )
     return {"fundamentals": fundamentals, "risks": risks}
 
 

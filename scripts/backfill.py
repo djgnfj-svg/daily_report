@@ -1,4 +1,6 @@
-"""One-off seed: 90 days of prices + latest 4 quarters of financials.
+"""One-off seed: 400 days of prices + latest 4 quarters of financials.
+
+400 캘린더일이면 252 거래일(52주)을 충분히 덮어 MA200·52주 위치 지표 계산 가능.
 
 Run from repo root with PYTHONPATH set to apps/agent/src:
     python -m scripts.backfill
@@ -26,7 +28,7 @@ log = logging.getLogger("backfill")
 
 def main(today: date | None = None) -> None:
     today = today or date.today()
-    start = today - timedelta(days=90)
+    start = today - timedelta(days=400)
     client = get_client()
 
     for ticker in TICKERS:

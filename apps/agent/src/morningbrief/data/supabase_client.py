@@ -72,6 +72,34 @@ def load_recent_prices(client: Client, ticker: str, days: int, as_of: date) -> l
     return resp.data
 
 
+def get_latest_price_date(client: Client, ticker: str) -> date | None:
+    resp = (
+        client.table("prices")
+        .select("date")
+        .eq("ticker", ticker)
+        .order("date", desc=True)
+        .limit(1)
+        .execute()
+    )
+    if not resp.data:
+        return None
+    return date.fromisoformat(resp.data[0]["date"])
+
+
+def get_latest_filed_at(client: Client, ticker: str) -> date | None:
+    resp = (
+        client.table("financials")
+        .select("filed_at")
+        .eq("ticker", ticker)
+        .order("filed_at", desc=True)
+        .limit(1)
+        .execute()
+    )
+    if not resp.data or not resp.data[0]["filed_at"]:
+        return None
+    return date.fromisoformat(resp.data[0]["filed_at"])
+
+
 def load_latest_financials(client: Client, ticker: str, n: int = 4) -> list[dict]:
     """Return up to `n` most recent financial periods for `ticker`."""
     resp = (

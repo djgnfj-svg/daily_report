@@ -14,10 +14,10 @@ def test_graph_runs_end_to_end_with_stub_agents(monkeypatch):
     risk_scores = {"NVDA": 70, "MSFT": 65, "GOOGL": 60, "AAPL": 40, "AMZN": 40,
                    "META": 40, "TSLA": 40, "AVGO": 40, "ORCL": 40, "NFLX": 40}
 
-    def fake_fund(llm, ticker, financials, last_close):
+    def fake_fund(llm, ticker, financials, last_close, indicators=None):
         return FundamentalResult(ticker, score=fund_scores[ticker], summary="f", key_metrics={})
 
-    def fake_risk(llm, ticker, prices):
+    def fake_risk(llm, ticker, prices, indicators=None):
         return RiskResult(ticker, score=risk_scores[ticker], summary="r",
                           metrics={"volatility_pct": 30, "max_drawdown_pct": -10, "sharpe_naive": 1.0})
 

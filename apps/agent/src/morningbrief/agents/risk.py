@@ -43,11 +43,17 @@ def _compute_metrics(prices: list[dict]) -> dict:
     }
 
 
-def analyze_risk(llm: LLM, ticker: str, prices: list[dict]) -> RiskResult:
+def analyze_risk(
+    llm: LLM,
+    ticker: str,
+    prices: list[dict],
+    indicators: dict | None = None,
+) -> RiskResult:
     metrics = _compute_metrics(prices)
     user = (
         f"Ticker: {ticker}\n"
-        f"Computed metrics:\n{json.dumps(metrics)}\n"
+        f"Computed risk metrics:\n{json.dumps(metrics)}\n"
+        f"Technical indicators:\n{json.dumps(indicators or {})}\n"
         f"Score the risk profile and write a one-sentence summary."
     )
     out = llm.complete_json(system=RISK_SYSTEM, user=user, tier="cheap")
