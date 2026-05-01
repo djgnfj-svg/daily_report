@@ -1,12 +1,14 @@
 from datetime import date, timedelta
 from unittest.mock import MagicMock, patch
 
+from morningbrief.config import CONFIG
 from morningbrief.data.tickers import TICKERS
 from morningbrief.pipeline.ingest import (
-    LOOKBACK_DAYS,
     ingest_financials,
     ingest_prices,
 )
+
+LOOKBACK_DAYS = CONFIG.price_backfill_days
 
 
 @patch("morningbrief.pipeline.ingest.is_trading_day", return_value=False)

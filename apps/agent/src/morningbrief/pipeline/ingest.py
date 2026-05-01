@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 from datetime import date, timedelta
 
+from morningbrief.config import CONFIG
 from morningbrief.data.calendar import is_trading_day
 from morningbrief.data.edgar import fetch_quarterly_financials
 from morningbrief.data.supabase_client import (
@@ -22,11 +23,10 @@ from morningbrief.data.yf import fetch_prices
 
 log = logging.getLogger(__name__)
 
-LOOKBACK_DAYS = 400          # 자동 시드 윈도우 (252 거래일+버퍼)
-FINANCIALS_STALE_DAYS = 7    # 재무 갱신 쿨다운
 
-
-def ingest_prices(client, today: date, lookback_days: int = LOOKBACK_DAYS) -> dict[str, int]:
+def ingest_prices(
+    client, today: date, lookback_days: int = CONFIG.price_backfill_days
+) -> dict[str, int]:
     """각 ticker별로 누락된 가격 행을 받아 upsert. {ticker: 추가행수} 반환."""
     if not is_trading_day(today):
         log.info("ingest_prices: %s is not a trading day, skip", today)
@@ -58,7 +58,7 @@ def ingest_prices(client, today: date, lookback_days: int = LOOKBACK_DAYS) -> di
 
 
 def ingest_financials(
-    client, today: date, stale_days: int = FINANCIALS_STALE_DAYS
+    client, today: date, stale_days: int = CONFIG.financials_stale_days
 ) -> dict[str, int]:
     """최신 filed_at이 stale_days 이상 됐거나 비어 있으면 최근 4분기 재조회."""
     refreshed: dict[str, int] = {}

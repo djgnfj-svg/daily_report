@@ -3,7 +3,7 @@ from typing import TypedDict
 
 from morningbrief.agents.fundamental import FundamentalResult
 from morningbrief.agents.risk import RiskResult
-from morningbrief.agents.debate import BullCase, BearCase, Verdict
+from morningbrief.agents.debate import OptimistCase, PessimistCase, Verdict
 
 
 class TickerInputs(TypedDict):
@@ -18,7 +18,7 @@ class PipelineState(TypedDict):
     fundamentals: dict[str, FundamentalResult]
     risks: dict[str, RiskResult]
     top3: list[str]
-    bulls: dict[str, BullCase]
-    bears: dict[str, BearCase]
+    optimists: dict[str, OptimistCase]
+    pessimists: dict[str, PessimistCase]
     verdicts: dict[str, Verdict]
     signals: list[dict]

@@ -76,7 +76,7 @@ def test_run_for_date_persists_metrics_and_scores(
     get_client.return_value = MagicMock()
     fake = MagicMock()
     fake.invoke.return_value = _state_with_two_tickers() | {
-        "universe": {}, "bulls": {}, "bears": {}, "verdicts": {}, "signals": [],
+        "universe": {}, "optimists": {}, "pessimists": {}, "verdicts": {}, "signals": [],
     }
     build_graph.return_value = fake
 

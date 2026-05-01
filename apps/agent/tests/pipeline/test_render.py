@@ -3,7 +3,7 @@ from datetime import date
 from morningbrief.pipeline.render import render_report
 from morningbrief.agents.fundamental import FundamentalResult
 from morningbrief.agents.risk import RiskResult
-from morningbrief.agents.debate import BullCase, BearCase, Verdict
+from morningbrief.agents.debate import OptimistCase, PessimistCase, Verdict
 
 
 def _state():
@@ -16,15 +16,15 @@ def _state():
         "risks": {t: RiskResult(t, 50, f"{t} risk", {"volatility_pct": 30, "max_drawdown_pct": -10}) for t in [
             "AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "TSLA", "AVGO", "ORCL", "NFLX"]},
         "top3": ["NVDA", "MSFT", "AVGO"],
-        "bulls": {
-            "NVDA": BullCase("NVDA", "Bull NVDA", ["m"], "rebut", 78),
-            "MSFT": BullCase("MSFT", "Bull MSFT", ["m"], "rebut", 65),
-            "AVGO": BullCase("AVGO", "Bull AVGO", ["m"], "rebut", 71),
+        "optimists": {
+            "NVDA": OptimistCase("NVDA", "Optimist NVDA", ["m"], "rebut", 78),
+            "MSFT": OptimistCase("MSFT", "Optimist MSFT", ["m"], "rebut", 65),
+            "AVGO": OptimistCase("AVGO", "Optimist AVGO", ["m"], "rebut", 71),
         },
-        "bears": {
-            "NVDA": BearCase("NVDA", "Bear NVDA", ["m"], "rebut", 60),
-            "MSFT": BearCase("MSFT", "Bear MSFT", ["m"], "rebut", 55),
-            "AVGO": BearCase("AVGO", "Bear AVGO", ["m"], "rebut", 50),
+        "pessimists": {
+            "NVDA": PessimistCase("NVDA", "Pessimist NVDA", ["m"], "rebut", 60),
+            "MSFT": PessimistCase("MSFT", "Pessimist MSFT", ["m"], "rebut", 55),
+            "AVGO": PessimistCase("AVGO", "Pessimist AVGO", ["m"], "rebut", 50),
         },
         "verdicts": {
             "NVDA": Verdict("NVDA", "BUY", 78, "Verdict NVDA", "Catalyst X"),
@@ -51,10 +51,10 @@ def test_render_has_header_and_top3_sections():
     assert "MorningBrief — 2026-05-01" in md
     assert "## 🎯 오늘의 Top 3" in md
     assert "### 1. NVDA" in md
-    assert "Bull Researcher" in md
-    assert "Bear Researcher" in md
-    assert "Supervisor" in md
-    assert "What would change my mind" in md
+    assert "긍정론자" in md
+    assert "비관론자" in md
+    assert "판정관" in md
+    assert "결과를 뒤집을 조건" in md
 
 
 def test_render_has_remaining_seven_table():

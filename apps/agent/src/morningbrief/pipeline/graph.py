@@ -5,7 +5,7 @@ from langgraph.graph import StateGraph, END
 from morningbrief.agents.fundamental import analyze_fundamental
 from morningbrief.agents.risk import analyze_risk
 from morningbrief.agents.scoring import top_picks
-from morningbrief.agents.debate import bull_case, bear_case, supervisor
+from morningbrief.agents.debate import optimist_case, pessimist_case, judge
 from morningbrief.indicators import compute_indicators
 from morningbrief.llm.base import LLM
 from morningbrief.pipeline.state import PipelineState
@@ -35,17 +35,17 @@ def _node_select_top3(state: PipelineState) -> dict:
 
 
 def _node_debate_top3(state: PipelineState, llm: LLM) -> dict:
-    bulls, bears, verdicts = {}, {}, {}
+    optimists, pessimists, verdicts = {}, {}, {}
     for ticker in state["top3"]:
         f = state["fundamentals"][ticker]
         r = state["risks"][ticker]
-        b = bull_case(llm, ticker, f, r)
-        br = bear_case(llm, ticker, f, r)
-        v = supervisor(llm, ticker, f, r, b, br)
-        bulls[ticker] = b
-        bears[ticker] = br
+        o = optimist_case(llm, ticker, f, r)
+        p = pessimist_case(llm, ticker, f, r)
+        v = judge(llm, ticker, f, r, o, p)
+        optimists[ticker] = o
+        pessimists[ticker] = p
         verdicts[ticker] = v
-    return {"bulls": bulls, "bears": bears, "verdicts": verdicts}
+    return {"optimists": optimists, "pessimists": pessimists, "verdicts": verdicts}
 
 
 def _node_assemble_signals(state: PipelineState) -> dict:

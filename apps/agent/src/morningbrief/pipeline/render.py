@@ -3,8 +3,8 @@ from morningbrief.pipeline.state import PipelineState
 
 def _format_top_section(state: PipelineState, ticker: str, idx: int) -> str:
     r = state["risks"][ticker]
-    bull = state["bulls"][ticker]
-    bear = state["bears"][ticker]
+    optimist = state["optimists"][ticker]
+    pessimist = state["pessimists"][ticker]
     v = state["verdicts"][ticker]
     last_close = state["universe"][ticker]["prices"][-1]["close"] if state["universe"][ticker]["prices"] else 0.0
 
@@ -12,11 +12,11 @@ def _format_top_section(state: PipelineState, ticker: str, idx: int) -> str:
         f"### {idx}. {ticker} — **{v.signal}** (Confidence {v.confidence})\n\n"
         f"> 어제 종가 ${last_close:.2f} · 변동성 {r.metrics.get('volatility_pct', 0):.1f}% · "
         f"MDD {r.metrics.get('max_drawdown_pct', 0):.1f}%\n\n"
-        f"**🐂 Bull Researcher**\n> {bull.thesis}\n>\n> {bull.rebuttal}\n\n"
-        f"**🐻 Bear Researcher**\n> {bear.thesis}\n>\n> {bear.rebuttal}\n\n"
-        f"**🎯 Supervisor 결정 — {v.signal} (Confidence {v.confidence})**\n\n"
+        f"**🟢 긍정론자**\n> {optimist.thesis}\n>\n> {optimist.rebuttal}\n\n"
+        f"**🔴 비관론자**\n> {pessimist.thesis}\n>\n> {pessimist.rebuttal}\n\n"
+        f"**🎯 판정관 결정 — {v.signal} (Confidence {v.confidence})**\n\n"
         f"{v.thesis}\n\n"
-        f"> **What would change my mind**: {v.what_would_change_my_mind}\n\n"
+        f"> **결과를 뒤집을 조건**: {v.what_would_change_my_mind}\n\n"
         f"---\n"
     )
 

@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Literal
 
 from morningbrief.llm.base import LLM
-from morningbrief.llm.prompts import BULL_SYSTEM, BEAR_SYSTEM, SUPERVISOR_SYSTEM
+from morningbrief.llm.prompts import OPTIMIST_SYSTEM, PESSIMIST_SYSTEM, JUDGE_SYSTEM
 from morningbrief.agents.fundamental import FundamentalResult
 from morningbrief.agents.risk import RiskResult
 from morningbrief.utils import clamp
@@ -13,7 +13,7 @@ Signal = Literal["BUY", "HOLD", "SELL"]
 
 
 @dataclass(frozen=True)
-class BullCase:
+class OptimistCase:
     ticker: str
     thesis: str
     key_metrics: list[str]
@@ -22,7 +22,7 @@ class BullCase:
 
 
 @dataclass(frozen=True)
-class BearCase:
+class PessimistCase:
     ticker: str
     thesis: str
     key_metrics: list[str]
@@ -47,9 +47,9 @@ def _user_for_debate(ticker: str, f: FundamentalResult, r: RiskResult) -> str:
     )
 
 
-def bull_case(llm: LLM, ticker: str, f: FundamentalResult, r: RiskResult) -> BullCase:
-    out = llm.complete_json(system=BULL_SYSTEM, user=_user_for_debate(ticker, f, r), tier="premium")
-    return BullCase(
+def optimist_case(llm: LLM, ticker: str, f: FundamentalResult, r: RiskResult) -> OptimistCase:
+    out = llm.complete_json(system=OPTIMIST_SYSTEM, user=_user_for_debate(ticker, f, r), tier="premium")
+    return OptimistCase(
         ticker=ticker,
         thesis=str(out.get("thesis", "")),
         key_metrics=list(out.get("key_metrics", [])),
@@ -58,9 +58,9 @@ def bull_case(llm: LLM, ticker: str, f: FundamentalResult, r: RiskResult) -> Bul
     )
 
 
-def bear_case(llm: LLM, ticker: str, f: FundamentalResult, r: RiskResult) -> BearCase:
-    out = llm.complete_json(system=BEAR_SYSTEM, user=_user_for_debate(ticker, f, r), tier="premium")
-    return BearCase(
+def pessimist_case(llm: LLM, ticker: str, f: FundamentalResult, r: RiskResult) -> PessimistCase:
+    out = llm.complete_json(system=PESSIMIST_SYSTEM, user=_user_for_debate(ticker, f, r), tier="premium")
+    return PessimistCase(
         ticker=ticker,
         thesis=str(out.get("thesis", "")),
         key_metrics=list(out.get("key_metrics", [])),
@@ -69,20 +69,20 @@ def bear_case(llm: LLM, ticker: str, f: FundamentalResult, r: RiskResult) -> Bea
     )
 
 
-def supervisor(
+def judge(
     llm: LLM,
     ticker: str,
     f: FundamentalResult,
     r: RiskResult,
-    bull: BullCase,
-    bear: BearCase,
+    optimist: OptimistCase,
+    pessimist: PessimistCase,
 ) -> Verdict:
     user = (
         _user_for_debate(ticker, f, r)
-        + f"Bull case: thesis={bull.thesis!r}, confidence={bull.confidence}, rebuttal={bull.rebuttal!r}\n"
-        + f"Bear case: thesis={bear.thesis!r}, confidence={bear.confidence}, rebuttal={bear.rebuttal!r}\n"
+        + f"Optimist case: thesis={optimist.thesis!r}, confidence={optimist.confidence}, rebuttal={optimist.rebuttal!r}\n"
+        + f"Pessimist case: thesis={pessimist.thesis!r}, confidence={pessimist.confidence}, rebuttal={pessimist.rebuttal!r}\n"
     )
-    out = llm.complete_json(system=SUPERVISOR_SYSTEM, user=user, tier="premium")
+    out = llm.complete_json(system=JUDGE_SYSTEM, user=user, tier="premium")
     raw_signal = str(out.get("signal", "HOLD")).upper()
     if raw_signal not in ("BUY", "HOLD", "SELL"):
         raw_signal = "HOLD"
