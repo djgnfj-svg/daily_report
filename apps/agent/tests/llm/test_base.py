@@ -30,4 +30,7 @@ def test_openai_llm_premium_tier_uses_premium_model():
 
 
 def test_model_tiers_has_cheap_and_premium():
-    assert MODEL_TIERS == {"cheap": "gpt-4o-mini", "premium": "gpt-4o"}
+    assert MODEL_TIERS == {
+        "cheap": "gpt-4.1-mini-2025-04-14",
+        "premium": "gpt-4.1-2025-04-14",
+    }
