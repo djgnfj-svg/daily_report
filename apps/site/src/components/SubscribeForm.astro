@@ -1,13 +1,25 @@
-<form id="subscribe-form" class="flex flex-col sm:flex-row gap-3 mt-8 max-w-md">
-  <input
-    type="email" name="email" required placeholder="you@example.com"
-    class="flex-1 px-4 py-3 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-900"
-  />
-  <button type="submit" class="px-6 py-3 rounded-lg bg-slate-900 text-white font-semibold hover:bg-slate-800">
-    구독하기
-  </button>
+---
+const { variant = "inline" } = Astro.props;
+---
+<form id="subscribe-form" class="group">
+  <div class="flex items-stretch border-b-2 border-ink focus-within:border-accent transition-colors">
+    <input
+      type="email"
+      name="email"
+      required
+      placeholder="you@email.com"
+      autocomplete="email"
+      class="flex-1 bg-transparent px-1 py-3 text-lg sm:text-xl font-mono placeholder:text-ink-muted focus:outline-none"
+    />
+    <button
+      type="submit"
+      class="ml-3 px-5 py-2 my-1 bg-ink text-paper text-sm uppercase tracking-[0.18em] font-medium hover:bg-accent hover:text-ink transition-colors"
+    >
+      구독
+    </button>
+  </div>
+  <p id="subscribe-msg" class="mt-3 text-xs h-4 text-ink-muted tabular"></p>
 </form>
-<p id="subscribe-msg" class="mt-3 text-sm h-5"></p>
 
 <script>
   const form = document.getElementById("subscribe-form") as HTMLFormElement;
@@ -15,7 +27,7 @@
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     msg.textContent = "전송 중...";
-    msg.className = "mt-3 text-sm h-5 text-slate-500";
+    msg.className = "mt-3 text-xs h-4 text-ink-muted tabular";
     const fd = new FormData(form);
     const email = String(fd.get("email") ?? "");
     const r = await fetch("/api/subscribe", {
@@ -24,13 +36,13 @@
       body: JSON.stringify({ email }),
     });
     if (r.ok) {
-      msg.textContent = "메일을 보냈습니다. 받은편지함에서 구독을 확인해 주세요.";
-      msg.className = "mt-3 text-sm h-5 text-emerald-700";
+      msg.textContent = "✓ 확인 메일을 보냈습니다. 받은편지함에서 구독 확인을 눌러주세요.";
+      msg.className = "mt-3 text-xs h-4 text-bull";
       form.reset();
     } else {
       const data = await r.json().catch(() => ({}));
       msg.textContent = data.error ?? "오류가 발생했습니다.";
-      msg.className = "mt-3 text-sm h-5 text-red-600";
+      msg.className = "mt-3 text-xs h-4 text-bear";
     }
   });
 </script>
