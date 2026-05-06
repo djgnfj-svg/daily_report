@@ -6,8 +6,8 @@ from openai import OpenAI
 
 
 MODEL_TIERS: dict[str, str] = {
-    "cheap": "gpt-4o-mini",
-    "premium": "gpt-4o",
+    "cheap": "gpt-4.1-mini-2025-04-14",
+    "premium": "gpt-4.1-2025-04-14",
 }
 
 

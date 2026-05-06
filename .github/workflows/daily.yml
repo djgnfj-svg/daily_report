@@ -1,9 +1,9 @@
-name: Daily Report
+name: Weekly Report
 
 on:
   schedule:
-    # 21:00 UTC Sun-Thu = 06:00 KST Mon-Fri
-    - cron: '0 21 * * 0-4'
+    # 21:00 UTC Sunday = 06:00 KST Monday
+    - cron: '0 21 * * 0'
   workflow_dispatch:
 
 jobs:
@@ -48,7 +48,7 @@ jobs:
           script: |
             github.rest.issues.create({
               ...context.repo,
-              title: `Daily report failed: ${new Date().toISOString().slice(0, 10)}`,
+              title: `Weekly report failed: ${new Date().toISOString().slice(0, 10)}`,
               body: 'See workflow run logs.',
               labels: ['ops']
             })
