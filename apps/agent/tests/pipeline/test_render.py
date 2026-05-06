@@ -3,7 +3,7 @@ from datetime import date
 from morningbrief.pipeline.render import render_report
 from morningbrief.agents.fundamental import FundamentalResult
 from morningbrief.agents.risk import RiskResult
-from morningbrief.agents.debate import CriticNote, OptimistCase, PessimistCase, Verdict
+from morningbrief.agents.debate import OptimistCase, PessimistCase, Verdict
 
 
 def _state():
@@ -220,12 +220,15 @@ def test_render_skips_outcomes_block_when_empty():
     assert "## 📈 어제 시그널 결과" not in md
 
 
-def test_render_includes_claims_and_critic_note():
+def test_render_includes_judge_first_then_debate():
     s = _state()
     s["optimists"]["NVDA"] = OptimistCase(
         ticker="NVDA",
         thesis="Optimist NVDA",
-        claims=[{"claim": "Data center revenue surging", "metric": "yoy_growth", "value": "+120%"}],
+        claims=[
+            {"claim": "매출 성장", "metric": "revenue", "value": "89B"},
+            {"claim": "FCF 강함", "metric": "FCF", "value": "24B"},
+        ],
         confidence=78,
         rebuttal="Margins remain robust",
         counter_claims=[],
@@ -238,20 +241,13 @@ def test_render_includes_claims_and_critic_note():
         rebuttal="",
         counter_claims=[],
     )
-    s["critics"] = {
-        "NVDA": CriticNote(
-            ticker="NVDA",
-            note="Geopolitical export risks understated",
-            missing_factors=["china_export"],
-        )
-    }
     md = render_report(s, prior_outcomes=[])
-    assert "긍정론자 (conf" in md
-    assert "- Data center revenue surging" in md
-    assert "yoy_growth" in md
-    assert "+120%" in md
-    assert "🔍 검토관 노트" in md
-    assert "Geopolitical export risks understated" in md
+    assert md.find("🎯 판정관 결정") < md.find("🟢 긍정론자")
+    assert md.find("결과를 뒤집을 조건") < md.find("왜 이렇게 결정했나")
+    # claims compact form: single bulleted line joining both metrics with ` · `
+    compact_lines = [line for line in md.splitlines() if "(revenue:" in line and "(FCF:" in line]
+    assert compact_lines, "expected compact claims line containing both metrics"
+    assert " · " in compact_lines[0]
 
 
 def test_render_shows_retry_banner_when_retried_tickers_present():
@@ -260,12 +256,6 @@ def test_render_shows_retry_banner_when_retried_tickers_present():
     md = render_report(s, prior_outcomes=[])
     assert "재토론 적용 종목" in md
     assert "AAPL" in md
-
-
-def test_render_omits_critic_section_when_absent():
-    s = _state()
-    md = render_report(s, prior_outcomes=[])
-    assert "🔍 검토관" not in md
 
 
 def test_render_omits_rebuttal_line_when_empty():

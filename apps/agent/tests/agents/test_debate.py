@@ -1,10 +1,7 @@
 from morningbrief.agents.debate import (
-    CriticNote,
     OptimistCase,
     PessimistCase,
-    Verdict,
     _coerce_claims,
-    critic_note,
     judge,
     optimist_opening,
     optimist_rebuttal,
@@ -151,26 +148,6 @@ def test_judge_returns_BUY_when_signal_BUY_and_confidence_high():
     assert v.confidence == 78
     assert v.what_would_change_my_mind == "X"
     assert v.winning_claims[0]["metric"] == "FCF"
-
-
-def test_critic_note_parses_and_clips():
-    long_note = "가" * 500
-    llm = FakeLLM(
-        {
-            "검토관": {
-                "note": long_note,
-                "missing_factors": ["금리", "환율"],
-            }
-        }
-    )
-    optimist = OptimistCase("NVDA", "t", [], 70)
-    pessimist = PessimistCase("NVDA", "t", [], 70)
-    verdict = Verdict("NVDA", "BUY", 72, "결정", "...")
-    c = critic_note(llm, "NVDA", _f(), _r(), optimist, pessimist, verdict)
-    assert isinstance(c, CriticNote)
-    assert len(c.note) == 240
-    assert "금리" in c.missing_factors
-    assert "환율" in c.missing_factors
 
 
 def test_coerce_claims_drops_malformed():

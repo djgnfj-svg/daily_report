@@ -6,7 +6,6 @@ from morningbrief.agents.fundamental import FundamentalResult
 from morningbrief.agents.risk import RiskResult
 from morningbrief.llm.base import LLM
 from morningbrief.llm.prompts import (
-    CRITIC_SYSTEM,
     JUDGE_SYSTEM,
     OPTIMIST_OPENING_SYSTEM,
     OPTIMIST_REBUTTAL_SYSTEM,
@@ -46,13 +45,6 @@ class Verdict:
     thesis: str
     what_would_change_my_mind: str
     winning_claims: list[dict] = field(default_factory=list)
-
-
-@dataclass(frozen=True)
-class CriticNote:
-    ticker: str
-    note: str
-    missing_factors: list[str]
 
 
 def _user_inputs(ticker: str, f: FundamentalResult, r: RiskResult) -> str:
@@ -182,27 +174,4 @@ def judge(
         thesis=str(out.get("thesis", "")),
         what_would_change_my_mind=str(out.get("what_would_change_my_mind", "")),
         winning_claims=_coerce_claims(out.get("winning_claims")),
-    )
-
-
-def critic_note(
-    llm: LLM,
-    ticker: str,
-    f: FundamentalResult,
-    r: RiskResult,
-    optimist: OptimistCase,
-    pessimist: PessimistCase,
-    verdict: Verdict,
-) -> CriticNote:
-    user = (
-        _user_inputs(ticker, f, r)
-        + f"\n[긍정 thesis] {optimist.thesis!r}\n[긍정 rebuttal] {optimist.rebuttal!r}\n"
-        + f"[비관 thesis] {pessimist.thesis!r}\n[비관 rebuttal] {pessimist.rebuttal!r}\n"
-        + f"[판정관] {verdict.signal} conf={verdict.confidence} thesis={verdict.thesis!r}\n"
-    )
-    out = llm.complete_json(system=CRITIC_SYSTEM, user=user, tier="premium")
-    return CriticNote(
-        ticker=ticker,
-        note=str(out.get("note", ""))[:240],
-        missing_factors=[str(x) for x in (out.get("missing_factors") or [])],
     )

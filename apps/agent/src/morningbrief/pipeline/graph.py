@@ -9,7 +9,6 @@ from morningbrief.agents.debate import (
     OptimistCase,
     PessimistCase,
     Verdict,
-    critic_note,
     judge,
     optimist_opening,
     optimist_rebuttal,
@@ -67,7 +66,6 @@ def _node_debate_top3(state: PipelineState, llm: LLM) -> dict:
     optimists: dict[str, OptimistCase] = {}
     pessimists: dict[str, PessimistCase] = {}
     verdicts: dict[str, Verdict] = {}
-    critics: dict[str, Any] = {}
     retried: list[str] = []
     for ticker in state["top3"]:
         f = state["fundamentals"][ticker]
@@ -76,16 +74,13 @@ def _node_debate_top3(state: PipelineState, llm: LLM) -> dict:
         if v.confidence < _RETRY_THRESHOLD:
             retried.append(ticker)
             o, p, v = _run_full_debate(llm, ticker, f, r)
-        c = critic_note(llm, ticker, f, r, o, p, v)
         optimists[ticker] = o
         pessimists[ticker] = p
         verdicts[ticker] = v
-        critics[ticker] = c
     return {
         "optimists": optimists,
         "pessimists": pessimists,
         "verdicts": verdicts,
-        "critics": critics,
         "retried_tickers": retried,
     }
 
