@@ -5,7 +5,7 @@ from morningbrief.pipeline.graph import build_graph
 from morningbrief.pipeline.state import PipelineState
 from morningbrief.agents.fundamental import FundamentalResult
 from morningbrief.agents.risk import RiskResult
-from morningbrief.agents.debate import CriticNote, OptimistCase, PessimistCase, Verdict
+from morningbrief.agents.debate import OptimistCase, PessimistCase, Verdict
 
 
 def _make_optimist(ticker: str, conf: int = 75) -> OptimistCase:
@@ -39,10 +39,6 @@ def _make_verdict(ticker: str, conf: int = 78) -> Verdict:
         what_would_change_my_mind="what changes",
         winning_claims=[],
     )
-
-
-def _make_critic(ticker: str) -> CriticNote:
-    return CriticNote(ticker=ticker, note="note", missing_factors=[])
 
 
 def test_graph_runs_end_to_end_with_stub_agents(monkeypatch):
@@ -97,9 +93,6 @@ def test_graph_runs_end_to_end_with_stub_agents(monkeypatch):
     def fake_judge(llm, ticker, f, r, o, p):
         return _make_verdict(ticker, conf=78)
 
-    def fake_critic(llm, ticker, f, r, o, p, v):
-        return _make_critic(ticker)
-
     monkeypatch.setattr("morningbrief.pipeline.graph.analyze_fundamental", fake_fund)
     monkeypatch.setattr("morningbrief.pipeline.graph.analyze_risk", fake_risk)
     monkeypatch.setattr("morningbrief.pipeline.graph.optimist_opening", fake_optimist_opening)
@@ -107,7 +100,6 @@ def test_graph_runs_end_to_end_with_stub_agents(monkeypatch):
     monkeypatch.setattr("morningbrief.pipeline.graph.optimist_rebuttal", fake_optimist_rebuttal)
     monkeypatch.setattr("morningbrief.pipeline.graph.pessimist_rebuttal", fake_pessimist_rebuttal)
     monkeypatch.setattr("morningbrief.pipeline.graph.judge", fake_judge)
-    monkeypatch.setattr("morningbrief.pipeline.graph.critic_note", fake_critic)
 
     universe = {
         t: {
@@ -126,7 +118,6 @@ def test_graph_runs_end_to_end_with_stub_agents(monkeypatch):
         "optimists": {},
         "pessimists": {},
         "verdicts": {},
-        "critics": {},
         "retried_tickers": [],
         "signals": [],
     }
@@ -141,7 +132,6 @@ def test_graph_runs_end_to_end_with_stub_agents(monkeypatch):
     assert len(final["optimists"]) == 3
     assert len(final["pessimists"]) == 3
     assert len(final["verdicts"]) == 3
-    assert len(final["critics"]) == 3
     assert final["retried_tickers"] == []
     assert len(final["signals"]) == 10
     nvda_signal = next(s for s in final["signals"] if s["ticker"] == "NVDA")
@@ -187,7 +177,6 @@ def test_debate_retries_when_judge_confidence_below_threshold(monkeypatch):
         "opt_reb": 0,
         "pes_reb": 0,
         "judge": 0,
-        "critic": 0,
     }
     judge_per_ticker: dict[str, int] = {}
 
@@ -214,16 +203,11 @@ def test_debate_retries_when_judge_confidence_below_threshold(monkeypatch):
         # First call returns 50 (forces retry); second returns 80.
         return _make_verdict(ticker, conf=50 if n == 1 else 80)
 
-    def fake_critic(llm, ticker, f, r, o, p, v):
-        call_counts["critic"] += 1
-        return _make_critic(ticker)
-
     monkeypatch.setattr("morningbrief.pipeline.graph.optimist_opening", fake_optimist_opening)
     monkeypatch.setattr("morningbrief.pipeline.graph.pessimist_opening", fake_pessimist_opening)
     monkeypatch.setattr("morningbrief.pipeline.graph.optimist_rebuttal", fake_optimist_rebuttal)
     monkeypatch.setattr("morningbrief.pipeline.graph.pessimist_rebuttal", fake_pessimist_rebuttal)
     monkeypatch.setattr("morningbrief.pipeline.graph.judge", fake_judge)
-    monkeypatch.setattr("morningbrief.pipeline.graph.critic_note", fake_critic)
 
     universe = {
         t: {
@@ -241,7 +225,6 @@ def test_debate_retries_when_judge_confidence_below_threshold(monkeypatch):
         "optimists": {},
         "pessimists": {},
         "verdicts": {},
-        "critics": {},
         "retried_tickers": [],
         "signals": [],
     }
@@ -257,8 +240,6 @@ def test_debate_retries_when_judge_confidence_below_threshold(monkeypatch):
     assert call_counts["pes_open"] == 6
     assert call_counts["opt_reb"] == 6
     assert call_counts["pes_reb"] == 6
-    # Critic called once per ticker AFTER retry decision.
-    assert call_counts["critic"] == 3
     # Final verdict reflects the retry result (conf=80).
     for t in final["top3"]:
         assert final["verdicts"][t].confidence == 80

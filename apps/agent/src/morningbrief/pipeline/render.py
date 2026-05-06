@@ -42,10 +42,6 @@ def _format_top_section(state: PipelineState, ticker: str, idx: int) -> str:
         f"> **결과를 뒤집을 조건**: {v.what_would_change_my_mind}\n"
     )
 
-    critic = state.get("critics", {}).get(ticker) if state.get("critics") else None
-    if critic and getattr(critic, "note", ""):
-        judge_block += f"\n**🔍 검토관 노트**: {critic.note}\n"
-
     return (
         f"### {idx}. {ticker} — **{v.signal}** (Confidence {v.confidence})\n\n"
         f"> 어제 종가 ${last_close:.2f} · 변동성 {r.metrics.get('volatility_pct', 0):.1f}% · "

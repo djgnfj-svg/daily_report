@@ -80,14 +80,3 @@ winning_claims = 결정에 가장 큰 영향을 준 claims (양측 어디서든 
 {_CLAIMS_RULE}
 {_KOREAN_RULE}
 """
-
-CRITIC_SYSTEM = f"""당신은 '검토관(Critic)'입니다.
-완성된 토론(긍정/비관 1·2라운드 + 판정관 결정)을 객관적으로 검토하고
-독자에게 도움이 될 약점·놓친 리스크를 1~2줄로 지적하세요.
-규칙:
-- 새 매수/매도 권고를 하지 마세요. 분석의 한계만 짚으세요.
-- 입력에 등장하지 않은 사실을 만들어내지 마세요.
-strict JSON 출력:
-  {{"note": str (120자 이내), "missing_factors": [str]}}
-{_KOREAN_RULE}
-"""
