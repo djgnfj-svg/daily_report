@@ -1,24 +1,209 @@
 ---
 import Base from "@/layouts/Base.astro";
 import SubscribeForm from "@/components/SubscribeForm.astro";
----
-<Base title="MorningBrief — AI 주식 뉴스레터">
-  <h1 class="text-4xl sm:text-5xl font-bold tracking-tight">MorningBrief</h1>
-  <p class="text-xl text-slate-700 mt-4">매일 아침 6시(KST), AI 멀티 에이전트가 분석한 미국 빅테크 10종.</p>
 
-  <section class="mt-10">
-    <h2 class="text-lg font-semibold mb-2">무엇이 들어있나요?</h2>
-    <ul class="list-disc pl-5 text-slate-700 space-y-1">
-      <li>Top 3 종목 — Bull-Bear 디베이트 + 최종 시그널 (BUY / HOLD / SELL)</li>
-      <li>나머지 7종 한 줄 요약 표</li>
-      <li>어제 시그널의 1일 수익률 자동 검증 (vs SPY)</li>
-      <li><a class="underline" href="/archive">공개 아카이브</a></li>
-    </ul>
+const today = new Date();
+const issueNumber = Math.floor(
+  (today.getTime() - new Date("2026-05-01").getTime()) / (7 * 24 * 60 * 60 * 1000)
+) + 1;
+
+const universe = ["AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "TSLA", "AVGO", "ORCL", "NFLX"];
+
+const stages = [
+  { n: "01", label: "수집", body: "yfinance · SEC EDGAR · NYSE 캘린더로 시세·재무·휴장일 동기화" },
+  { n: "02", label: "지표", body: "MA20/60/200 · RSI14 · 52주 위치 · 변동성 · MDD · Sharpe 결정적 계산" },
+  { n: "03", label: "분석", body: "10종 병렬 — 펀더멘털 + 리스크 분석가가 0~100 점수와 근거 산출" },
+  { n: "04", label: "Top 3", body: "0.6·펀더멘털 + 0.4·리스크 가중합으로 상위 3종 선정 (룰 기반)" },
+  { n: "05", label: "디베이트", body: "긍정/비관론자가 2라운드 토론 → 판정관이 BUY/HOLD/SELL · 신뢰도 결정" },
+  { n: "06", label: "검증", body: "지난 주 시그널의 7일/30일 수익률을 vs SPY로 자동 채점" },
+];
+---
+<Base title="MorningBrief — AI가 분석한 빅테크 10종 주간 브리핑">
+  <!-- HERO -->
+  <section class="px-6 sm:px-10 pt-10 sm:pt-16 pb-20 sm:pb-28 max-w-6xl mx-auto">
+    <div class="flex items-baseline justify-between text-xs uppercase tracking-[0.25em] text-ink-muted mb-10 rise rise-1">
+      <span class="font-mono tabular">VOL.01 · ISSUE {issueNumber.toString().padStart(2, "0")}</span>
+      <span class="font-mono tabular hidden sm:inline">
+        {today.toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" })}
+      </span>
+    </div>
+
+    <h1 class="font-display text-[14vw] sm:text-[9rem] leading-[0.9] tracking-tightest rise rise-2">
+      매주 월요일,<br />
+      <span class="text-accent italic">AI</span>가 본<br />
+      미국 빅테크.
+    </h1>
+
+    <div class="mt-12 grid sm:grid-cols-12 gap-8 items-end rise rise-3">
+      <p class="sm:col-span-7 text-lg sm:text-xl text-ink-soft leading-relaxed max-w-2xl">
+        멀티 에이전트 LangGraph 파이프라인이 빅테크 10종을 분석합니다. 결정적 지표 위에서
+        분석가·디베이트·판정관이 합의한 매수·관망·매도 신호를 매주 월요일 06:00에 받으세요.
+        <span class="text-ink">무료 · 광고 없음 · 1-click 수신거부.</span>
+      </p>
+
+      <div class="sm:col-span-5">
+        <SubscribeForm />
+      </div>
+    </div>
   </section>
 
-  <SubscribeForm />
+  <!-- WHAT'S INSIDE — sample card -->
+  <section class="border-t border-paper-line bg-paper-deep/50">
+    <div class="max-w-6xl mx-auto px-6 sm:px-10 py-20 sm:py-24 grid sm:grid-cols-12 gap-10">
+      <div class="sm:col-span-4">
+        <p class="text-xs uppercase tracking-[0.25em] text-accent font-mono mb-3">PREVIEW</p>
+        <h2 class="font-display text-4xl sm:text-5xl leading-tight">
+          이렇게<br />받습니다.
+        </h2>
+        <p class="mt-5 text-ink-soft text-sm leading-relaxed max-w-xs">
+          판정관 결정 → 결과를 뒤집을 조건 → 토론 근거 순서로, 결론부터 보여드립니다.
+          숫자로 인용한 근거만 표시되어 검증이 가능합니다.
+        </p>
+      </div>
 
-  <p class="mt-12 text-xs text-slate-500">
-    본 메일은 정보 제공 목적이며 투자 자문이 아닙니다. 모든 투자 결정의 책임은 본인에게 있습니다.
-  </p>
+      <article class="sm:col-span-8 bg-paper border border-paper-line p-7 sm:p-10 shadow-[0_30px_60px_-30px_rgba(13,13,12,0.18)]">
+        <header class="flex items-center justify-between text-xs font-mono tabular text-ink-muted">
+          <span>MORNINGBRIEF · 2026-05-04</span>
+          <span class="text-accent">SAMPLE</span>
+        </header>
+        <h3 class="font-display text-3xl mt-5 flex items-baseline gap-3">
+          <span class="font-mono text-2xl tabular">NVDA</span>
+          <span class="text-bull">— BUY</span>
+          <span class="text-ink-muted text-base font-sans">신뢰도 78</span>
+        </h3>
+        <div class="mt-5 pl-4 border-l-2 border-accent">
+          <p class="text-xs uppercase tracking-[0.18em] text-accent font-mono mb-2">🎯 판정관 결정</p>
+          <p class="text-ink-soft leading-relaxed">
+            데이터센터 GPU 매출 비중과 영업이익률 확장이 지속되고 있고, 변동성·MDD가
+            동종 대비 양호. 단, 고객 집중도 리스크가 잔존해 매수 후에도 분기 가이던스 모니터링 필수.
+          </p>
+          <p class="mt-3 text-sm text-ink-muted">
+            <span class="font-medium text-ink">결과를 뒤집을 조건</span> — 다음 분기 데이터센터 매출 성장률 &lt; 35%
+          </p>
+        </div>
+
+        <p class="mt-6 text-sm font-mono tabular text-ink-muted">
+          어제 종가 $1,247 · 변동성 38% · MDD −22%
+        </p>
+
+        <div class="mt-8 pt-6 border-t border-paper-line">
+          <p class="text-xs uppercase tracking-[0.18em] text-ink-muted font-mono mb-4">왜 이렇게 결정했나</p>
+          <div class="grid sm:grid-cols-2 gap-6 text-sm">
+            <div>
+              <p class="font-medium text-bull">🟢 긍정론자 <span class="text-ink-muted font-normal tabular">conf 82</span></p>
+              <p class="mt-2 text-ink-soft leading-relaxed">데이터센터 매출 +94%, 영업이익률 62%로 압도적 캐시카우.</p>
+              <p class="mt-2 text-xs font-mono tabular text-ink-muted">
+                — DC매출 (revenue: 47B) · OPM (margin: 62%)
+              </p>
+            </div>
+            <div>
+              <p class="font-medium text-bear">🔴 비관론자 <span class="text-ink-muted font-normal tabular">conf 65</span></p>
+              <p class="mt-2 text-ink-soft leading-relaxed">상위 4고객 매출 비중 40% — 자체 ASIC 전환 시 의존도 감소.</p>
+              <p class="mt-2 text-xs font-mono tabular text-ink-muted">
+                — 고객집중 (top4_pct: 40) · 변동성 (vol_pct: 38)
+              </p>
+            </div>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- PIPELINE — 6 stages -->
+  <section class="max-w-6xl mx-auto px-6 sm:px-10 py-24">
+    <div class="grid sm:grid-cols-12 gap-8 mb-12 items-end">
+      <div class="sm:col-span-7">
+        <p class="text-xs uppercase tracking-[0.25em] text-accent font-mono mb-3">PIPELINE</p>
+        <h2 class="font-display text-5xl sm:text-6xl leading-[0.95] tracking-tight">
+          결정적 계산<br />
+          <span class="italic text-ink-muted">위의</span> AI 추론.
+        </h2>
+      </div>
+      <p class="sm:col-span-5 text-ink-soft leading-relaxed">
+        지표·점수·랭킹은 코드가, 분석·디베이트·판정은 LLM이 — 책임 영역을
+        분리해 결과를 매주 재현·검증할 수 있게 만들었습니다.
+      </p>
+    </div>
+
+    <div class="rule-accent mb-10"></div>
+
+    <ol class="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-10">
+      {
+        stages.map((s, i) => (
+          <li class="group relative pt-6 border-t border-ink/15 hover:border-accent transition-colors">
+            <div class="flex items-baseline gap-4">
+              <span class="font-mono tabular text-xs text-ink-muted group-hover:text-accent transition-colors">
+                {s.n}
+              </span>
+              <h3 class="font-display text-2xl tracking-tight">{s.label}</h3>
+            </div>
+            <p class="mt-3 text-sm text-ink-soft leading-relaxed pr-2">{s.body}</p>
+          </li>
+        ))
+      }
+    </ol>
+  </section>
+
+  <!-- UNIVERSE strip -->
+  <section class="border-y border-paper-line bg-ink text-paper py-16 overflow-hidden">
+    <div class="max-w-6xl mx-auto px-6 sm:px-10">
+      <p class="text-xs uppercase tracking-[0.25em] text-accent font-mono mb-6">UNIVERSE</p>
+      <div class="font-display text-5xl sm:text-7xl tracking-tightest leading-[1.05] flex flex-wrap gap-x-8 gap-y-2 tabular">
+        {
+          universe.map((t, i) => (
+            <span class="font-mono">
+              {t}
+              {i < universe.length - 1 && <span class="text-accent ml-2">·</span>}
+            </span>
+          ))
+        }
+      </div>
+      <p class="mt-8 text-sm text-paper/70 max-w-xl">
+        시가총액·거래량 기준 미국 시장의 상위 빅테크 10종. 종목군은 분기마다 재검토합니다.
+      </p>
+    </div>
+  </section>
+
+  <!-- TRUST / FAQ-lite -->
+  <section class="max-w-6xl mx-auto px-6 sm:px-10 py-24 grid sm:grid-cols-3 gap-10">
+    <div>
+      <p class="font-mono text-xs text-accent uppercase tracking-[0.2em] mb-2">데이터</p>
+      <h3 class="font-display text-2xl mb-2">공식 출처만</h3>
+      <p class="text-sm text-ink-soft leading-relaxed">
+        시세는 Yahoo Finance, 재무·공시는 SEC EDGAR. 휴장일은 NYSE 캘린더.
+        외부 가공 데이터를 쓰지 않습니다.
+      </p>
+    </div>
+    <div>
+      <p class="font-mono text-xs text-accent uppercase tracking-[0.2em] mb-2">모델</p>
+      <h3 class="font-display text-2xl mb-2">스냅샷 고정</h3>
+      <p class="text-sm text-ink-soft leading-relaxed">
+        OpenAI <code class="font-mono text-xs">gpt-4.1-mini-2025-04-14</code> ·
+        <code class="font-mono text-xs">gpt-4.1-2025-04-14</code>. 모델이 조용히 바뀌어 결과가
+        흔들리지 않게 핀 처리.
+      </p>
+    </div>
+    <div>
+      <p class="font-mono text-xs text-accent uppercase tracking-[0.2em] mb-2">운영</p>
+      <h3 class="font-display text-2xl mb-2">단방향 무료</h3>
+      <p class="text-sm text-ink-soft leading-relaxed">
+        모든 구독자에게 동일 내용을 발송합니다. 개별 종목 문의·맞춤 자문에는 응답하지 않으며,
+        유료 회원제로 전환할 계획이 없습니다.
+      </p>
+    </div>
+  </section>
+
+  <!-- FINAL CTA -->
+  <section class="max-w-3xl mx-auto px-6 sm:px-10 pb-24 text-center">
+    <p class="font-mono text-xs uppercase tracking-[0.25em] text-accent mb-5">SUBSCRIBE</p>
+    <h2 class="font-display text-5xl sm:text-6xl leading-[0.95] tracking-tight mb-6">
+      월요일 아침,<br />받은편지함에서.
+    </h2>
+    <p class="text-ink-soft mb-10">
+      이메일만 입력하면 됩니다. 확인 메일 1통 후 다음 월요일 06:00부터 시작.
+    </p>
+    <div class="max-w-md mx-auto text-left">
+      <SubscribeForm />
+    </div>
+  </section>
 </Base>
