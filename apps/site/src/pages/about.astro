@@ -1,9 +1,129 @@
 ---
 import Base from "@/layouts/Base.astro";
+
+const universe = ["AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "TSLA", "AVGO", "ORCL", "NFLX"];
+
+const stages = [
+  {
+    title: "1. 수집 (Ingest)",
+    body: "NYSE 캘린더로 휴장일을 거르고, yfinance로 어제 시세를 증분 upsert합니다. 재무는 SEC EDGAR에서 7일 이상 stale일 때만 재조회합니다. 멱등 설계라 같은 날 여러 번 돌려도 안전합니다.",
+    deterministic: true,
+  },
+  {
+    title: "2. 지표 가공 (Indicators)",
+    body: "MA20/60/200, RSI14, 52주 위치, 20일 거래량비, 변동성, MDD, Sharpe를 결정적으로 계산합니다. LLM에 사실(fact)로 주입되어 환각을 줄입니다.",
+    deterministic: true,
+  },
+  {
+    title: "3. 분석 — Fundamental × 10",
+    body: "재무·주가·기술지표를 받아 0~100 점수와 180자 이내 한국어 요약을 생성합니다. (gpt-4o-mini, 10종 병렬)",
+    deterministic: false,
+  },
+  {
+    title: "4. 분석 — Risk × 10",
+    body: "변동성·MDD·Sharpe와 추세 구조를 보고 리스크 조정 점수를 산출합니다. (gpt-4o-mini, 10종 병렬)",
+    deterministic: false,
+  },
+  {
+    title: "5. Top 3 선정 (ScoreAndRank)",
+    body: "0.6 × Fundamental + 0.4 × Risk 가중합으로 상위 3종을 결정합니다. LLM이 아닌 규칙으로 뽑아 재현성을 확보합니다.",
+    deterministic: true,
+  },
+  {
+    title: "6. 디베이트 — 긍정론자 vs 비관론자 vs 판정관",
+    body: "Top 3에 한해 Bull/Bear가 각자 가장 강한 논거를 만들고, 판정관이 BUY/HOLD/SELL과 신뢰도, '결과를 뒤집을 조건'을 결정합니다. 신뢰도 60 미만이면 자동 HOLD입니다. (gpt-4o)",
+    deterministic: false,
+  },
+  {
+    title: "7. 렌더 · 저장 · 발송",
+    body: "Markdown 본문을 만들고 reports/signals 테이블에 적재한 뒤, Resend로 확인된 구독자에게 일괄 발송합니다.",
+    deterministic: true,
+  },
+];
 ---
 <Base title="소개 · MorningBrief">
-  <h1 class="text-3xl font-bold">소개</h1>
-  <p class="mt-4">MorningBrief는 LangGraph 기반 멀티 에이전트 파이프라인이 매일 아침 미국 빅테크 10종(AAPL, MSFT, GOOGL, AMZN, META, NVDA, TSLA, AVGO, ORCL, NFLX)을 분석해 보내는 무료 뉴스레터입니다.</p>
-  <p class="mt-4">데이터: SEC EDGAR (재무·공시), Yahoo Finance (가격). 모델: OpenAI gpt-4o / gpt-4o-mini.</p>
-  <p class="mt-4">소스 코드는 <a class="underline" href="https://github.com/djgnfj3795/morningbrief">GitHub</a>에 공개되어 있습니다.</p>
+  <h1 class="text-3xl font-bold">MorningBrief 동작 방식</h1>
+
+  <p class="mt-4 text-slate-700">
+    매일 아침 6시(KST), LangGraph 기반 멀티 에이전트가 미국 빅테크 10종을 분석해 무료로 보내는 뉴스레터입니다.
+    분석은 결정적 계산(지표·점수)과 LLM 추론(요약·디베이트)을 명확히 분리해 재현성과 검증 가능성을 추구합니다.
+  </p>
+
+  <section class="mt-8">
+    <h2 class="text-xl font-semibold">대상 종목 (10)</h2>
+    <p class="mt-2 text-slate-700">
+      {universe.join(" · ")}
+    </p>
+  </section>
+
+  <section class="mt-10">
+    <h2 class="text-xl font-semibold">파이프라인</h2>
+    <pre class="mt-4 overflow-x-auto rounded-lg bg-slate-900 p-4 text-xs leading-relaxed text-slate-100">
+{`         [10종 입력]
+              │
+   ┌──────────┴──────────┐
+   ▼                     ▼
+Fundamental × 10      Risk × 10        (gpt-4o-mini, 병렬)
+   └──────────┬──────────┘
+              ▼
+       ScoreAndRank (룰 기반)
+       상위 3종 → is_top_pick
+              │
+   ┌──────────┴──────────┐
+   ▼                     ▼
+긍정론자 × 3 ◄─디베이트─► 비관론자 × 3   (gpt-4o)
+   └──────────┬──────────┘
+              ▼
+          판정관 × 3
+   (BUY/HOLD/SELL + 결과를 뒤집을 조건)
+              │
+              ▼
+       Markdown Report → Resend`}
+    </pre>
+  </section>
+
+  <section class="mt-10">
+    <h2 class="text-xl font-semibold">단계별 상세</h2>
+    <ol class="mt-4 space-y-4">
+      {stages.map((s) => (
+        <li class="rounded-lg border border-slate-200 bg-white p-4">
+          <div class="flex items-center justify-between gap-2">
+            <h3 class="font-semibold">{s.title}</h3>
+            <span class={`text-xs rounded-full px-2 py-0.5 ${s.deterministic ? "bg-emerald-100 text-emerald-700" : "bg-indigo-100 text-indigo-700"}`}>
+              {s.deterministic ? "결정적" : "LLM"}
+            </span>
+          </div>
+          <p class="mt-2 text-sm text-slate-700">{s.body}</p>
+        </li>
+      ))}
+    </ol>
+  </section>
+
+  <section class="mt-10">
+    <h2 class="text-xl font-semibold">데이터 · 모델 · 인프라</h2>
+    <ul class="mt-2 list-disc pl-5 text-slate-700 space-y-1">
+      <li><strong>가격</strong>: Yahoo Finance (yfinance)</li>
+      <li><strong>재무 · 공시</strong>: SEC EDGAR</li>
+      <li><strong>휴장일</strong>: NYSE 캘린더 (pandas-market-calendars)</li>
+      <li><strong>LLM</strong>: OpenAI gpt-4o-mini (분석) · gpt-4o (디베이트)</li>
+      <li><strong>그래프</strong>: LangGraph · 트레이스 Langfuse</li>
+      <li><strong>저장 · 발송</strong>: Supabase Postgres · Resend</li>
+    </ul>
+  </section>
+
+  <section class="mt-10">
+    <h2 class="text-xl font-semibold">소스 · 아카이브</h2>
+    <p class="mt-2 text-slate-700">
+      코드는 <a class="underline" href="https://github.com/djgnfj3795/morningbrief">GitHub</a>에 공개되어 있고, 과거 리포트는 <a class="underline" href="/archive">아카이브</a>에서 모두 열람할 수 있습니다.
+    </p>
+  </section>
+
+  <section class="mt-10 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+    <h2 class="font-semibold">⚠️ 면책 · 운영 원칙</h2>
+    <ul class="mt-2 list-disc pl-5 space-y-1">
+      <li>본 메일은 <strong>정보 제공 목적</strong>이며 투자 자문이 아닙니다. 모든 투자 결정의 책임은 본인에게 있으며 <strong>원금 손실 가능성</strong>이 있습니다.</li>
+      <li>구독자 전원에게 <strong>동일한 내용</strong>을 단방향으로 발송합니다. 개별 종목 문의·맞춤 자문에는 응답하지 않습니다.</li>
+      <li>서비스는 무료이며, 향후에도 유료 회원제·1:1 자문은 제공하지 않습니다.</li>
+    </ul>
+  </section>
 </Base>
