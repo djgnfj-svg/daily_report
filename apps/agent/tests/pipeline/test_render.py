@@ -9,42 +9,168 @@ from morningbrief.agents.debate import CriticNote, OptimistCase, PessimistCase, 
 def _state():
     return {
         "report_date": date(2026, 5, 1),
-        "universe": {t: {"financials": [], "prices": [{"close": 100.0}]} for t in [
-            "AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "TSLA", "AVGO", "ORCL", "NFLX"]},
-        "fundamentals": {t: FundamentalResult(t, 60, f"{t} fund", {}) for t in [
-            "AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "TSLA", "AVGO", "ORCL", "NFLX"]},
-        "risks": {t: RiskResult(t, 50, f"{t} risk", {"volatility_pct": 30, "max_drawdown_pct": -10}) for t in [
-            "AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "TSLA", "AVGO", "ORCL", "NFLX"]},
+        "universe": {
+            t: {"financials": [], "prices": [{"close": 100.0}]}
+            for t in [
+                "AAPL",
+                "MSFT",
+                "GOOGL",
+                "AMZN",
+                "META",
+                "NVDA",
+                "TSLA",
+                "AVGO",
+                "ORCL",
+                "NFLX",
+            ]
+        },
+        "fundamentals": {
+            t: FundamentalResult(t, 60, f"{t} fund", {})
+            for t in [
+                "AAPL",
+                "MSFT",
+                "GOOGL",
+                "AMZN",
+                "META",
+                "NVDA",
+                "TSLA",
+                "AVGO",
+                "ORCL",
+                "NFLX",
+            ]
+        },
+        "risks": {
+            t: RiskResult(t, 50, f"{t} risk", {"volatility_pct": 30, "max_drawdown_pct": -10})
+            for t in [
+                "AAPL",
+                "MSFT",
+                "GOOGL",
+                "AMZN",
+                "META",
+                "NVDA",
+                "TSLA",
+                "AVGO",
+                "ORCL",
+                "NFLX",
+            ]
+        },
         "top3": ["NVDA", "MSFT", "AVGO"],
         "optimists": {
-            t: OptimistCase(ticker=t, thesis=f"Optimist {t}", claims=[],
-                            confidence=c, rebuttal="rebut", counter_claims=[])
+            t: OptimistCase(
+                ticker=t,
+                thesis=f"Optimist {t}",
+                claims=[],
+                confidence=c,
+                rebuttal="rebut",
+                counter_claims=[],
+            )
             for t, c in [("NVDA", 78), ("MSFT", 65), ("AVGO", 71)]
         },
         "pessimists": {
-            t: PessimistCase(ticker=t, thesis=f"Pessimist {t}", claims=[],
-                             confidence=c, rebuttal="rebut", counter_claims=[])
+            t: PessimistCase(
+                ticker=t,
+                thesis=f"Pessimist {t}",
+                claims=[],
+                confidence=c,
+                rebuttal="rebut",
+                counter_claims=[],
+            )
             for t, c in [("NVDA", 60), ("MSFT", 55), ("AVGO", 50)]
         },
         "verdicts": {
-            "NVDA": Verdict(ticker="NVDA", signal="BUY", confidence=78,
-                            thesis="Verdict NVDA", what_would_change_my_mind="Catalyst X"),
-            "MSFT": Verdict(ticker="MSFT", signal="BUY", confidence=65,
-                            thesis="Verdict MSFT", what_would_change_my_mind="Catalyst Y"),
-            "AVGO": Verdict(ticker="AVGO", signal="HOLD", confidence=58,
-                            thesis="Verdict AVGO", what_would_change_my_mind="Catalyst Z"),
+            "NVDA": Verdict(
+                ticker="NVDA",
+                signal="BUY",
+                confidence=78,
+                thesis="Verdict NVDA",
+                what_would_change_my_mind="Catalyst X",
+            ),
+            "MSFT": Verdict(
+                ticker="MSFT",
+                signal="BUY",
+                confidence=65,
+                thesis="Verdict MSFT",
+                what_would_change_my_mind="Catalyst Y",
+            ),
+            "AVGO": Verdict(
+                ticker="AVGO",
+                signal="HOLD",
+                confidence=58,
+                thesis="Verdict AVGO",
+                what_would_change_my_mind="Catalyst Z",
+            ),
         },
         "signals": [
-            {"ticker": "NVDA", "signal": "BUY", "confidence": 78, "thesis": "Verdict NVDA", "is_top_pick": True},
-            {"ticker": "MSFT", "signal": "BUY", "confidence": 65, "thesis": "Verdict MSFT", "is_top_pick": True},
-            {"ticker": "AVGO", "signal": "HOLD", "confidence": 58, "thesis": "Verdict AVGO", "is_top_pick": True},
-            {"ticker": "AAPL", "signal": "HOLD", "confidence": 55, "thesis": "AAPL fund", "is_top_pick": False},
-            {"ticker": "GOOGL", "signal": "HOLD", "confidence": 50, "thesis": "GOOGL fund", "is_top_pick": False},
-            {"ticker": "AMZN", "signal": "HOLD", "confidence": 50, "thesis": "AMZN fund", "is_top_pick": False},
-            {"ticker": "META", "signal": "HOLD", "confidence": 50, "thesis": "META fund", "is_top_pick": False},
-            {"ticker": "TSLA", "signal": "HOLD", "confidence": 50, "thesis": "TSLA fund", "is_top_pick": False},
-            {"ticker": "ORCL", "signal": "HOLD", "confidence": 50, "thesis": "ORCL fund", "is_top_pick": False},
-            {"ticker": "NFLX", "signal": "HOLD", "confidence": 50, "thesis": "NFLX fund", "is_top_pick": False},
+            {
+                "ticker": "NVDA",
+                "signal": "BUY",
+                "confidence": 78,
+                "thesis": "Verdict NVDA",
+                "is_top_pick": True,
+            },
+            {
+                "ticker": "MSFT",
+                "signal": "BUY",
+                "confidence": 65,
+                "thesis": "Verdict MSFT",
+                "is_top_pick": True,
+            },
+            {
+                "ticker": "AVGO",
+                "signal": "HOLD",
+                "confidence": 58,
+                "thesis": "Verdict AVGO",
+                "is_top_pick": True,
+            },
+            {
+                "ticker": "AAPL",
+                "signal": "HOLD",
+                "confidence": 55,
+                "thesis": "AAPL fund",
+                "is_top_pick": False,
+            },
+            {
+                "ticker": "GOOGL",
+                "signal": "HOLD",
+                "confidence": 50,
+                "thesis": "GOOGL fund",
+                "is_top_pick": False,
+            },
+            {
+                "ticker": "AMZN",
+                "signal": "HOLD",
+                "confidence": 50,
+                "thesis": "AMZN fund",
+                "is_top_pick": False,
+            },
+            {
+                "ticker": "META",
+                "signal": "HOLD",
+                "confidence": 50,
+                "thesis": "META fund",
+                "is_top_pick": False,
+            },
+            {
+                "ticker": "TSLA",
+                "signal": "HOLD",
+                "confidence": 50,
+                "thesis": "TSLA fund",
+                "is_top_pick": False,
+            },
+            {
+                "ticker": "ORCL",
+                "signal": "HOLD",
+                "confidence": 50,
+                "thesis": "ORCL fund",
+                "is_top_pick": False,
+            },
+            {
+                "ticker": "NFLX",
+                "signal": "HOLD",
+                "confidence": 50,
+                "thesis": "NFLX fund",
+                "is_top_pick": False,
+            },
         ],
     }
 
@@ -69,8 +195,20 @@ def test_render_has_remaining_seven_table():
 
 def test_render_includes_outcomes_block_when_provided():
     outs = [
-        {"ticker": "NVDA", "signal": "BUY", "return_7d": 2.1, "return_30d": 5.5, "spy_return_30d": -0.8},
-        {"ticker": "AAPL", "signal": "HOLD", "return_7d": 0.3, "return_30d": 1.0, "spy_return_30d": -0.8},
+        {
+            "ticker": "NVDA",
+            "signal": "BUY",
+            "return_7d": 2.1,
+            "return_30d": 5.5,
+            "spy_return_30d": -0.8,
+        },
+        {
+            "ticker": "AAPL",
+            "signal": "HOLD",
+            "return_7d": 0.3,
+            "return_30d": 1.0,
+            "spy_return_30d": -0.8,
+        },
     ]
     md = render_report(_state(), prior_outcomes=outs)
     assert "## 📈 어제 시그널 결과" in md

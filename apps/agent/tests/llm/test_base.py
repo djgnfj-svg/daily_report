@@ -6,7 +6,9 @@ from morningbrief.llm.base import OpenAILLM, MODEL_TIERS
 
 def test_openai_llm_calls_correct_model_for_cheap_tier():
     fake_client = MagicMock()
-    fake_client.chat.completions.create.return_value.choices[0].message.content = json.dumps({"score": 80})
+    fake_client.chat.completions.create.return_value.choices[0].message.content = json.dumps(
+        {"score": 80}
+    )
 
     llm = OpenAILLM(client=fake_client)
     result = llm.complete_json(system="sys", user="usr", tier="cheap")

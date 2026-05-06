@@ -33,11 +33,17 @@ def _node_analyze_universe(state: PipelineState, llm: LLM) -> dict:
         indicators = compute_indicators(prices) if prices else {}
         all_indicators[ticker] = indicators
         fundamentals[ticker] = analyze_fundamental(
-            llm=llm, ticker=ticker, financials=inputs["financials"],
-            last_close=last_close, indicators=indicators,
+            llm=llm,
+            ticker=ticker,
+            financials=inputs["financials"],
+            last_close=last_close,
+            indicators=indicators,
         )
         risks[ticker] = analyze_risk(
-            llm=llm, ticker=ticker, prices=prices, indicators=indicators,
+            llm=llm,
+            ticker=ticker,
+            prices=prices,
+            indicators=indicators,
         )
     return {"fundamentals": fundamentals, "risks": risks, "indicators": all_indicators}
 
@@ -89,13 +95,15 @@ def _node_assemble_signals(state: PipelineState) -> dict:
     for ticker, f in state["fundamentals"].items():
         if ticker in state["verdicts"]:
             v = state["verdicts"][ticker]
-            signals.append({
-                "ticker": ticker,
-                "signal": v.signal,
-                "confidence": v.confidence,
-                "thesis": v.thesis,
-                "is_top_pick": True,
-            })
+            signals.append(
+                {
+                    "ticker": ticker,
+                    "signal": v.signal,
+                    "confidence": v.confidence,
+                    "thesis": v.thesis,
+                    "is_top_pick": True,
+                }
+            )
         else:
             r = state["risks"][ticker]
             combined = 0.6 * f.score + 0.4 * r.score
@@ -105,13 +113,15 @@ def _node_assemble_signals(state: PipelineState) -> dict:
                 sig, conf = "SELL", int(100 - combined)
             else:
                 sig, conf = "HOLD", int(50 + abs(combined - 50) / 2)
-            signals.append({
-                "ticker": ticker,
-                "signal": sig,
-                "confidence": conf,
-                "thesis": f.summary,
-                "is_top_pick": False,
-            })
+            signals.append(
+                {
+                    "ticker": ticker,
+                    "signal": sig,
+                    "confidence": conf,
+                    "thesis": f.summary,
+                    "is_top_pick": False,
+                }
+            )
     return {"signals": signals}
 
 

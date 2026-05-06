@@ -10,22 +10,33 @@ from morningbrief.agents.debate import CriticNote, OptimistCase, PessimistCase, 
 
 def _make_optimist(ticker: str, conf: int = 75) -> OptimistCase:
     return OptimistCase(
-        ticker=ticker, thesis="optimist thesis", claims=[],
-        confidence=conf, rebuttal="rebut", counter_claims=[],
+        ticker=ticker,
+        thesis="optimist thesis",
+        claims=[],
+        confidence=conf,
+        rebuttal="rebut",
+        counter_claims=[],
     )
 
 
 def _make_pessimist(ticker: str, conf: int = 50) -> PessimistCase:
     return PessimistCase(
-        ticker=ticker, thesis="pessimist thesis", claims=[],
-        confidence=conf, rebuttal="rebut", counter_claims=[],
+        ticker=ticker,
+        thesis="pessimist thesis",
+        claims=[],
+        confidence=conf,
+        rebuttal="rebut",
+        counter_claims=[],
     )
 
 
 def _make_verdict(ticker: str, conf: int = 78) -> Verdict:
     return Verdict(
-        ticker=ticker, signal="BUY", confidence=conf,
-        thesis="verdict thesis", what_would_change_my_mind="what changes",
+        ticker=ticker,
+        signal="BUY",
+        confidence=conf,
+        thesis="verdict thesis",
+        what_would_change_my_mind="what changes",
         winning_claims=[],
     )
 
@@ -35,17 +46,41 @@ def _make_critic(ticker: str) -> CriticNote:
 
 
 def test_graph_runs_end_to_end_with_stub_agents(monkeypatch):
-    fund_scores = {"NVDA": 90, "MSFT": 80, "GOOGL": 70, "AAPL": 30, "AMZN": 35,
-                   "META": 40, "TSLA": 45, "AVGO": 50, "ORCL": 55, "NFLX": 60}
-    risk_scores = {"NVDA": 70, "MSFT": 65, "GOOGL": 60, "AAPL": 40, "AMZN": 40,
-                   "META": 40, "TSLA": 40, "AVGO": 40, "ORCL": 40, "NFLX": 40}
+    fund_scores = {
+        "NVDA": 90,
+        "MSFT": 80,
+        "GOOGL": 70,
+        "AAPL": 30,
+        "AMZN": 35,
+        "META": 40,
+        "TSLA": 45,
+        "AVGO": 50,
+        "ORCL": 55,
+        "NFLX": 60,
+    }
+    risk_scores = {
+        "NVDA": 70,
+        "MSFT": 65,
+        "GOOGL": 60,
+        "AAPL": 40,
+        "AMZN": 40,
+        "META": 40,
+        "TSLA": 40,
+        "AVGO": 40,
+        "ORCL": 40,
+        "NFLX": 40,
+    }
 
     def fake_fund(llm, ticker, financials, last_close, indicators=None):
         return FundamentalResult(ticker, score=fund_scores[ticker], summary="f", key_metrics={})
 
     def fake_risk(llm, ticker, prices, indicators=None):
-        return RiskResult(ticker, score=risk_scores[ticker], summary="r",
-                          metrics={"volatility_pct": 30, "max_drawdown_pct": -10, "sharpe_naive": 1.0})
+        return RiskResult(
+            ticker,
+            score=risk_scores[ticker],
+            summary="r",
+            metrics={"volatility_pct": 30, "max_drawdown_pct": -10, "sharpe_naive": 1.0},
+        )
 
     def fake_optimist_opening(llm, ticker, f, r):
         return _make_optimist(ticker)
@@ -75,7 +110,10 @@ def test_graph_runs_end_to_end_with_stub_agents(monkeypatch):
     monkeypatch.setattr("morningbrief.pipeline.graph.critic_note", fake_critic)
 
     universe = {
-        t: {"financials": [{"period": "2026Q1", "revenue": 1.0}], "prices": [{"close": 100 + i} for i in range(60)]}
+        t: {
+            "financials": [{"period": "2026Q1", "revenue": 1.0}],
+            "prices": [{"close": 100 + i} for i in range(60)],
+        }
         for t in ["AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "TSLA", "AVGO", "ORCL", "NFLX"]
     }
 
@@ -115,21 +153,42 @@ def test_graph_runs_end_to_end_with_stub_agents(monkeypatch):
 
 def test_debate_retries_when_judge_confidence_below_threshold(monkeypatch):
     """Judge confidence < 65 triggers exactly one retry of full 5-call debate."""
-    fund_scores = {"NVDA": 90, "MSFT": 80, "GOOGL": 70, "AAPL": 30, "AMZN": 35,
-                   "META": 40, "TSLA": 45, "AVGO": 50, "ORCL": 55, "NFLX": 60}
+    fund_scores = {
+        "NVDA": 90,
+        "MSFT": 80,
+        "GOOGL": 70,
+        "AAPL": 30,
+        "AMZN": 35,
+        "META": 40,
+        "TSLA": 45,
+        "AVGO": 50,
+        "ORCL": 55,
+        "NFLX": 60,
+    }
     risk_scores = dict.fromkeys(fund_scores, 50)
 
     def fake_fund(llm, ticker, financials, last_close, indicators=None):
         return FundamentalResult(ticker, score=fund_scores[ticker], summary="f", key_metrics={})
 
     def fake_risk(llm, ticker, prices, indicators=None):
-        return RiskResult(ticker, score=risk_scores[ticker], summary="r",
-                          metrics={"volatility_pct": 30, "max_drawdown_pct": -10, "sharpe_naive": 1.0})
+        return RiskResult(
+            ticker,
+            score=risk_scores[ticker],
+            summary="r",
+            metrics={"volatility_pct": 30, "max_drawdown_pct": -10, "sharpe_naive": 1.0},
+        )
 
     monkeypatch.setattr("morningbrief.pipeline.graph.analyze_fundamental", fake_fund)
     monkeypatch.setattr("morningbrief.pipeline.graph.analyze_risk", fake_risk)
 
-    call_counts = {"opt_open": 0, "pes_open": 0, "opt_reb": 0, "pes_reb": 0, "judge": 0, "critic": 0}
+    call_counts = {
+        "opt_open": 0,
+        "pes_open": 0,
+        "opt_reb": 0,
+        "pes_reb": 0,
+        "judge": 0,
+        "critic": 0,
+    }
     judge_per_ticker: dict[str, int] = {}
 
     def fake_optimist_opening(llm, ticker, f, r):
@@ -167,7 +226,10 @@ def test_debate_retries_when_judge_confidence_below_threshold(monkeypatch):
     monkeypatch.setattr("morningbrief.pipeline.graph.critic_note", fake_critic)
 
     universe = {
-        t: {"financials": [{"period": "2026Q1", "revenue": 1.0}], "prices": [{"close": 100 + i} for i in range(60)]}
+        t: {
+            "financials": [{"period": "2026Q1", "revenue": 1.0}],
+            "prices": [{"close": 100 + i} for i in range(60)],
+        }
         for t in fund_scores
     }
     initial: PipelineState = {

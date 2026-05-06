@@ -90,9 +90,7 @@ def _format_outcomes(outcomes: list[dict]) -> str:
         else:
             excess_s = "—"
         r30_cell = f"**{_fmt(r30)}**" if r30 is not None else "—"
-        rows.append(
-            f"| {o['ticker']} | {o['signal']} | {_fmt(r7)} | {r30_cell} | {excess_s} |"
-        )
+        rows.append(f"| {o['ticker']} | {o['signal']} | {_fmt(r7)} | {r30_cell} | {excess_s} |")
     return "\n".join(rows)
 
 
@@ -113,8 +111,8 @@ def render_report(state: PipelineState, prior_outcomes: list[dict]) -> str:
     parts.append("---\n")
     retried = state.get("retried_tickers") or []
     if retried:
-        parts.append(
-            f"> ℹ️ 재토론 적용 종목 (판정관 confidence < 65): {', '.join(retried)}\n"
-        )
-    parts.append("> 본 메일은 정보 제공 목적이며 투자 자문이 아닙니다. 데이터: SEC EDGAR, Yahoo Finance.\n")
+        parts.append(f"> ℹ️ 재토론 적용 종목 (판정관 confidence < 65): {', '.join(retried)}\n")
+    parts.append(
+        "> 본 메일은 정보 제공 목적이며 투자 자문이 아닙니다. 데이터: SEC EDGAR, Yahoo Finance.\n"
+    )
     return "\n".join(parts)

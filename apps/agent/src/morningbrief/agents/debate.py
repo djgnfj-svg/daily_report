@@ -71,15 +71,11 @@ def _coerce_claims(raw) -> list[dict]:
         return out
     for c in raw:
         if isinstance(c, dict) and "claim" in c and "metric" in c and "value" in c:
-            out.append(
-                {"claim": str(c["claim"]), "metric": str(c["metric"]), "value": c["value"]}
-            )
+            out.append({"claim": str(c["claim"]), "metric": str(c["metric"]), "value": c["value"]})
     return out
 
 
-def optimist_opening(
-    llm: LLM, ticker: str, f: FundamentalResult, r: RiskResult
-) -> OptimistCase:
+def optimist_opening(llm: LLM, ticker: str, f: FundamentalResult, r: RiskResult) -> OptimistCase:
     out = llm.complete_json(
         system=OPTIMIST_OPENING_SYSTEM, user=_user_inputs(ticker, f, r), tier="premium"
     )
@@ -91,9 +87,7 @@ def optimist_opening(
     )
 
 
-def pessimist_opening(
-    llm: LLM, ticker: str, f: FundamentalResult, r: RiskResult
-) -> PessimistCase:
+def pessimist_opening(llm: LLM, ticker: str, f: FundamentalResult, r: RiskResult) -> PessimistCase:
     out = llm.complete_json(
         system=PESSIMIST_OPENING_SYSTEM, user=_user_inputs(ticker, f, r), tier="premium"
     )
@@ -114,8 +108,7 @@ def optimist_rebuttal(
     opponent: PessimistCase,
 ) -> OptimistCase:
     user = (
-        _user_inputs(ticker, f, r)
-        + f"\n[자기 1라운드 발언] thesis={opening.thesis!r}, "
+        _user_inputs(ticker, f, r) + f"\n[자기 1라운드 발언] thesis={opening.thesis!r}, "
         f"claims={json.dumps(opening.claims, ensure_ascii=False)}\n"
         + f"[비관론자 1라운드 발언] thesis={opponent.thesis!r}, "
         f"claims={json.dumps(opponent.claims, ensure_ascii=False)}\n"
@@ -140,8 +133,7 @@ def pessimist_rebuttal(
     opponent: OptimistCase,
 ) -> PessimistCase:
     user = (
-        _user_inputs(ticker, f, r)
-        + f"\n[자기 1라운드 발언] thesis={opening.thesis!r}, "
+        _user_inputs(ticker, f, r) + f"\n[자기 1라운드 발언] thesis={opening.thesis!r}, "
         f"claims={json.dumps(opening.claims, ensure_ascii=False)}\n"
         + f"[긍정론자 1라운드 발언] thesis={opponent.thesis!r}, "
         f"claims={json.dumps(opponent.claims, ensure_ascii=False)}\n"
@@ -166,8 +158,7 @@ def judge(
     pessimist: PessimistCase,
 ) -> Verdict:
     user = (
-        _user_inputs(ticker, f, r)
-        + f"\n[긍정론자 1라운드] {optimist.thesis!r} "
+        _user_inputs(ticker, f, r) + f"\n[긍정론자 1라운드] {optimist.thesis!r} "
         f"claims={json.dumps(optimist.claims, ensure_ascii=False)}\n"
         + f"[긍정론자 2라운드 반박] {optimist.rebuttal!r} "
         f"counter={json.dumps(optimist.counter_claims, ensure_ascii=False)}\n"
