@@ -28,7 +28,7 @@ def update_outcomes(
     signals_with_dates: list[tuple[str, str, date]],
     today: date,
 ) -> int:
-    """For each signal, attempt to fill price_1d/return_1d (and price_7d/return_7d if 7 sessions passed).
+    """For each signal, fill price_7d/return_7d (7 sessions) and price_30d/return_30d (30 sessions).
 
     `signals_with_dates`: list of (signal_id, ticker, signal_date) tuples.
     """
@@ -39,13 +39,6 @@ def update_outcomes(
             continue
         row: dict = {"signal_id": signal_id, "price_at_report": p0}
 
-        d1 = _step_to_next_session(signal_date)
-        if d1 < today:
-            p1 = _load_close(client, ticker, d1)
-            if p1 is not None:
-                row["price_1d"] = p1
-                row["return_1d"] = round((p1 / p0 - 1.0) * 100.0, 4)
-
         d7 = signal_date
         for _ in range(7):
             d7 = _step_to_next_session(d7)
@@ -55,7 +48,16 @@ def update_outcomes(
                 row["price_7d"] = p7
                 row["return_7d"] = round((p7 / p0 - 1.0) * 100.0, 4)
 
-        if "return_1d" in row or "return_7d" in row:
+        d30 = signal_date
+        for _ in range(30):
+            d30 = _step_to_next_session(d30)
+        if d30 < today:
+            p30 = _load_close(client, ticker, d30)
+            if p30 is not None:
+                row["price_30d"] = p30
+                row["return_30d"] = round((p30 / p0 - 1.0) * 100.0, 4)
+
+        if "return_7d" in row or "return_30d" in row:
             payloads.append(row)
 
     if payloads:

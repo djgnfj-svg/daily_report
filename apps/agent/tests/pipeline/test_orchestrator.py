@@ -17,7 +17,7 @@ def test_run_for_date_default_does_not_send(get_client, render, build_graph, lf,
     fake = MagicMock()
     fake.invoke.return_value = {
         "report_date": date(2026, 5, 1), "universe": {}, "fundamentals": {}, "risks": {},
-        "top3": [], "bulls": {}, "bears": {}, "verdicts": {},
+        "top3": [], "optimists": {}, "pessimists": {}, "verdicts": {},
         "signals": [{"ticker": "NVDA", "signal": "BUY", "confidence": 78, "thesis": "x", "is_top_pick": True}],
     }
     build_graph.return_value = fake
@@ -43,7 +43,7 @@ def test_run_for_date_with_send_invokes_send_and_outcomes(
     fake = MagicMock()
     fake.invoke.return_value = {
         "report_date": date(2026, 5, 1), "universe": {}, "fundamentals": {}, "risks": {},
-        "top3": [], "bulls": {}, "bears": {}, "verdicts": {},
+        "top3": [], "optimists": {}, "pessimists": {}, "verdicts": {},
         "signals": [],
     }
     build_graph.return_value = fake

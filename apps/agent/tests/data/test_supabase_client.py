@@ -1,7 +1,13 @@
 from datetime import date
 from unittest.mock import MagicMock
 
-from morningbrief.data.supabase_client import upsert_prices, upsert_financials
+from morningbrief.data.supabase_client import (
+    upsert_prices,
+    upsert_financials,
+    save_report_with_signals,
+    load_recent_prices,
+    load_latest_financials,
+)
 from morningbrief.data.yf import PriceRow
 from morningbrief.data.edgar import FinancialRow
 
@@ -50,18 +56,11 @@ def test_upsert_financials_serializes_dates():
     assert payload[0]["period"] == "2026Q1"
 
 
-# Task P2-2: load helpers + save_report_with_signals
-from morningbrief.data.supabase_client import (
-    save_report_with_signals,
-    load_recent_prices,
-    load_latest_financials,
-)
-
-
-def test_save_report_with_signals_inserts_report_then_signals():
+def test_save_report_with_signals_upserts_and_replaces_signals():
     mock_client = MagicMock()
-    insert_chain = mock_client.table.return_value.insert.return_value
-    insert_chain.execute.return_value.data = [{"id": "REPORT-UUID"}]
+    mock_client.table.return_value.upsert.return_value.execute.return_value.data = [
+        {"id": "REPORT-UUID"}
+    ]
 
     report = {"date": "2026-05-01", "body_md": "# hi", "trace_url": None, "cost_usd": 0.05}
     signals = [
@@ -72,9 +71,15 @@ def test_save_report_with_signals_inserts_report_then_signals():
     report_id = save_report_with_signals(mock_client, report, signals)
 
     assert report_id == "REPORT-UUID"
-    assert mock_client.table.call_args_list[0].args == ("reports",)
-    assert mock_client.table.call_args_list[1].args == ("signals",)
-    inserted_signals = mock_client.table.return_value.insert.call_args_list[1].args[0]
+    # reports upsert with on_conflict=date
+    upsert_call = mock_client.table.return_value.upsert.call_args
+    assert upsert_call.args[0] == report
+    assert upsert_call.kwargs == {"on_conflict": "date"}
+    # signals: delete-then-insert
+    mock_client.table.return_value.delete.return_value.eq.assert_called_with(
+        "report_id", "REPORT-UUID"
+    )
+    inserted_signals = mock_client.table.return_value.insert.call_args.args[0]
     assert inserted_signals[0]["report_id"] == "REPORT-UUID"
     assert inserted_signals[0]["ticker"] == "NVDA"
 

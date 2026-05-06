@@ -6,7 +6,9 @@ from morningbrief.llm.base import OpenAILLM, MODEL_TIERS
 
 def test_openai_llm_calls_correct_model_for_cheap_tier():
     fake_client = MagicMock()
-    fake_client.chat.completions.create.return_value.choices[0].message.content = json.dumps({"score": 80})
+    fake_client.chat.completions.create.return_value.choices[0].message.content = json.dumps(
+        {"score": 80}
+    )
 
     llm = OpenAILLM(client=fake_client)
     result = llm.complete_json(system="sys", user="usr", tier="cheap")
@@ -30,4 +32,7 @@ def test_openai_llm_premium_tier_uses_premium_model():
 
 
 def test_model_tiers_has_cheap_and_premium():
-    assert MODEL_TIERS == {"cheap": "gpt-4o-mini", "premium": "gpt-4o"}
+    assert MODEL_TIERS == {
+        "cheap": "gpt-4.1-mini-2025-04-14",
+        "premium": "gpt-4.1-2025-04-14",
+    }

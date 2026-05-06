@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import logging
+import os
 from datetime import date
 
+from morningbrief.config import CONFIG
 from morningbrief.data.tickers import TICKERS
 from morningbrief.data.supabase_client import (
     get_client,
@@ -68,7 +70,9 @@ def _build_metrics_and_scores_rows(state) -> tuple[list[dict], list[dict]]:
     return metrics_rows, scores_rows
 
 
-def _load_unprocessed_signals(client, lookback_days: int = 10) -> list[tuple[str, str, date]]:
+def _load_unprocessed_signals(
+    client, lookback_days: int = CONFIG.outcomes_lookback_days
+) -> list[tuple[str, str, date]]:
     """Return (signal_id, ticker, signal_date) for recent BUY/SELL signals to evaluate outcomes."""
     cutoff_iso = date.fromordinal(date.today().toordinal() - lookback_days).isoformat()
     resp = (
@@ -90,9 +94,11 @@ def run_for_date(
     report_date: date,
     llm: LLM | None = None,
     send: bool = False,
-    site_url: str = "https://reseeall.com",
+    site_url: str | None = None,
+    only_to: str | None = None,
 ) -> str:
     client = get_client()
+    site_url = site_url or os.environ.get("SITE_URL", "https://reseeall.com")
     llm = llm or OpenAILLM()
 
     try:
@@ -116,14 +122,16 @@ def run_for_date(
 
     universe = {}
     for ticker in TICKERS:
-        prices = load_recent_prices(client, ticker, days=365, as_of=report_date)
-        financials = load_latest_financials(client, ticker, n=4)
+        prices = load_recent_prices(
+            client, ticker, days=CONFIG.price_load_days, as_of=report_date
+        )
+        financials = load_latest_financials(client, ticker, n=CONFIG.financials_load_n)
         universe[ticker] = {"prices": prices, "financials": financials}
 
     initial = {
         "report_date": report_date, "universe": universe, "indicators": {},
         "fundamentals": {}, "risks": {}, "top3": [],
-        "bulls": {}, "bears": {}, "verdicts": {}, "signals": [],
+        "optimists": {}, "pessimists": {}, "verdicts": {}, "signals": [],
     }
 
     graph = build_graph(llm=llm)
@@ -148,6 +156,7 @@ def run_for_date(
                 report_date=report_date.isoformat(),
                 subject=f"MorningBrief — {report_date.isoformat()}",
                 body_md=body_md,
+                only_to=only_to,
             )
             log.info("Sent report to %d subscribers", sent)
         except Exception:
