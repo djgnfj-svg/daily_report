@@ -17,19 +17,22 @@ def _state():
             "AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "TSLA", "AVGO", "ORCL", "NFLX"]},
         "top3": ["NVDA", "MSFT", "AVGO"],
         "optimists": {
-            "NVDA": OptimistCase("NVDA", "Optimist NVDA", ["m"], "rebut", 78),
-            "MSFT": OptimistCase("MSFT", "Optimist MSFT", ["m"], "rebut", 65),
-            "AVGO": OptimistCase("AVGO", "Optimist AVGO", ["m"], "rebut", 71),
+            t: OptimistCase(ticker=t, thesis=f"Optimist {t}", claims=[],
+                            confidence=c, rebuttal="rebut", counter_claims=[])
+            for t, c in [("NVDA", 78), ("MSFT", 65), ("AVGO", 71)]
         },
         "pessimists": {
-            "NVDA": PessimistCase("NVDA", "Pessimist NVDA", ["m"], "rebut", 60),
-            "MSFT": PessimistCase("MSFT", "Pessimist MSFT", ["m"], "rebut", 55),
-            "AVGO": PessimistCase("AVGO", "Pessimist AVGO", ["m"], "rebut", 50),
+            t: PessimistCase(ticker=t, thesis=f"Pessimist {t}", claims=[],
+                             confidence=c, rebuttal="rebut", counter_claims=[])
+            for t, c in [("NVDA", 60), ("MSFT", 55), ("AVGO", 50)]
         },
         "verdicts": {
-            "NVDA": Verdict("NVDA", "BUY", 78, "Verdict NVDA", "Catalyst X"),
-            "MSFT": Verdict("MSFT", "BUY", 65, "Verdict MSFT", "Catalyst Y"),
-            "AVGO": Verdict("AVGO", "HOLD", 58, "Verdict AVGO", "Catalyst Z"),
+            "NVDA": Verdict(ticker="NVDA", signal="BUY", confidence=78,
+                            thesis="Verdict NVDA", what_would_change_my_mind="Catalyst X"),
+            "MSFT": Verdict(ticker="MSFT", signal="BUY", confidence=65,
+                            thesis="Verdict MSFT", what_would_change_my_mind="Catalyst Y"),
+            "AVGO": Verdict(ticker="AVGO", signal="HOLD", confidence=58,
+                            thesis="Verdict AVGO", what_would_change_my_mind="Catalyst Z"),
         },
         "signals": [
             {"ticker": "NVDA", "signal": "BUY", "confidence": 78, "thesis": "Verdict NVDA", "is_top_pick": True},

@@ -3,7 +3,7 @@ from typing import TypedDict
 
 from morningbrief.agents.fundamental import FundamentalResult
 from morningbrief.agents.risk import RiskResult
-from morningbrief.agents.debate import OptimistCase, PessimistCase, Verdict
+from morningbrief.agents.debate import CriticNote, OptimistCase, PessimistCase, Verdict
 
 
 class TickerInputs(TypedDict):
@@ -11,7 +11,7 @@ class TickerInputs(TypedDict):
     prices: list[dict]
 
 
-class PipelineState(TypedDict):
+class PipelineState(TypedDict, total=False):
     report_date: date
     universe: dict[str, TickerInputs]
     indicators: dict[str, dict]
@@ -21,4 +21,6 @@ class PipelineState(TypedDict):
     optimists: dict[str, OptimistCase]
     pessimists: dict[str, PessimistCase]
     verdicts: dict[str, Verdict]
+    critics: dict[str, CriticNote]
+    retried_tickers: list[str]
     signals: list[dict]

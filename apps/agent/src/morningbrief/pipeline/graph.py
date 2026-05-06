@@ -2,13 +2,25 @@ from typing import Any
 
 from langgraph.graph import StateGraph, END
 
-from morningbrief.agents.fundamental import analyze_fundamental
-from morningbrief.agents.risk import analyze_risk
+from morningbrief.agents.fundamental import FundamentalResult, analyze_fundamental
+from morningbrief.agents.risk import RiskResult, analyze_risk
 from morningbrief.agents.scoring import top_picks
-from morningbrief.agents.debate import optimist_case, pessimist_case, judge
+from morningbrief.agents.debate import (
+    OptimistCase,
+    PessimistCase,
+    Verdict,
+    critic_note,
+    judge,
+    optimist_opening,
+    optimist_rebuttal,
+    pessimist_opening,
+    pessimist_rebuttal,
+)
 from morningbrief.indicators import compute_indicators
 from morningbrief.llm.base import LLM
 from morningbrief.pipeline.state import PipelineState
+
+_RETRY_THRESHOLD = 65
 
 
 def _node_analyze_universe(state: PipelineState, llm: LLM) -> dict:
@@ -34,18 +46,42 @@ def _node_select_top3(state: PipelineState) -> dict:
     return {"top3": top_picks(state["fundamentals"], state["risks"], n=3)}
 
 
+def _run_full_debate(
+    llm: LLM, ticker: str, f: FundamentalResult, r: RiskResult
+) -> tuple[OptimistCase, PessimistCase, Verdict]:
+    o1 = optimist_opening(llm, ticker, f, r)
+    p1 = pessimist_opening(llm, ticker, f, r)
+    o2 = optimist_rebuttal(llm, ticker, f, r, opening=o1, opponent=p1)
+    p2 = pessimist_rebuttal(llm, ticker, f, r, opening=p1, opponent=o1)
+    v = judge(llm, ticker, f, r, o2, p2)
+    return o2, p2, v
+
+
 def _node_debate_top3(state: PipelineState, llm: LLM) -> dict:
-    optimists, pessimists, verdicts = {}, {}, {}
+    optimists: dict[str, OptimistCase] = {}
+    pessimists: dict[str, PessimistCase] = {}
+    verdicts: dict[str, Verdict] = {}
+    critics: dict[str, Any] = {}
+    retried: list[str] = []
     for ticker in state["top3"]:
         f = state["fundamentals"][ticker]
         r = state["risks"][ticker]
-        o = optimist_case(llm, ticker, f, r)
-        p = pessimist_case(llm, ticker, f, r)
-        v = judge(llm, ticker, f, r, o, p)
+        o, p, v = _run_full_debate(llm, ticker, f, r)
+        if v.confidence < _RETRY_THRESHOLD:
+            retried.append(ticker)
+            o, p, v = _run_full_debate(llm, ticker, f, r)
+        c = critic_note(llm, ticker, f, r, o, p, v)
         optimists[ticker] = o
         pessimists[ticker] = p
         verdicts[ticker] = v
-    return {"optimists": optimists, "pessimists": pessimists, "verdicts": verdicts}
+        critics[ticker] = c
+    return {
+        "optimists": optimists,
+        "pessimists": pessimists,
+        "verdicts": verdicts,
+        "critics": critics,
+        "retried_tickers": retried,
+    }
 
 
 def _node_assemble_signals(state: PipelineState) -> dict:
