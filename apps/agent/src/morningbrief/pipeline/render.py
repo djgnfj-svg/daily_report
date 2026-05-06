@@ -4,10 +4,10 @@ from morningbrief.pipeline.state import PipelineState
 def _format_claims(claims: list[dict]) -> str:
     if not claims:
         return ""
-    lines = []
-    for c in claims[:4]:
-        lines.append(f"  - {c.get('claim', '')} ({c.get('metric', '')}: {c.get('value', '')})")
-    return "\n".join(lines)
+    parts = [
+        f"{c.get('claim', '')} ({c.get('metric', '')}: {c.get('value', '')})" for c in claims[:4]
+    ]
+    return "- " + " · ".join(parts)
 
 
 def _format_top_section(state: PipelineState, ticker: str, idx: int) -> str:
@@ -28,29 +28,31 @@ def _format_top_section(state: PipelineState, ticker: str, idx: int) -> str:
     if opt_claims:
         opt_block += opt_claims + "\n"
     if optimist.rebuttal:
-        opt_block += f"\n> 반박: {optimist.rebuttal}\n"
+        opt_block += f"> 반박: {optimist.rebuttal}\n"
 
     pes_block = f"**🔴 비관론자 (conf {pessimist.confidence})**\n> {pessimist.thesis}\n"
     if pes_claims:
         pes_block += pes_claims + "\n"
     if pessimist.rebuttal:
-        pes_block += f"\n> 반박: {pessimist.rebuttal}\n"
+        pes_block += f"> 반박: {pessimist.rebuttal}\n"
 
-    judge_block = (
-        f"**🎯 판정관 결정 — {v.signal} (Confidence {v.confidence})**\n\n"
-        f"{v.thesis}\n\n"
-        f"> **결과를 뒤집을 조건**: {v.what_would_change_my_mind}\n"
-    )
-
-    return (
-        f"### {idx}. {ticker} — **{v.signal}** (Confidence {v.confidence})\n\n"
+    parts: list[str] = []
+    parts.append(f"### {idx}. {ticker} — **{v.signal}** (Confidence {v.confidence})\n")
+    parts.append("**🎯 판정관 결정**\n")
+    parts.append(f"{v.thesis}\n")
+    parts.append(f"> **결과를 뒤집을 조건**: {v.what_would_change_my_mind}\n")
+    parts.append(
         f"> 어제 종가 ${last_close:.2f} · 변동성 {r.metrics.get('volatility_pct', 0):.1f}% · "
-        f"MDD {r.metrics.get('max_drawdown_pct', 0):.1f}%\n\n"
-        f"{opt_block}\n"
-        f"{pes_block}\n"
-        f"{judge_block}\n"
-        f"---\n"
+        f"MDD {r.metrics.get('max_drawdown_pct', 0):.1f}%\n"
     )
+    parts.append("---\n")
+    if optimist.thesis or pessimist.thesis:
+        parts.append("**왜 이렇게 결정했나** (토론 근거)\n")
+        parts.append(opt_block)
+        parts.append(pes_block)
+    parts.append("---\n")
+
+    return "\n".join(parts)
 
 
 def _format_remaining_table(state: PipelineState) -> str:

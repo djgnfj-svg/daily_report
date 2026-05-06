@@ -220,6 +220,36 @@ def test_render_skips_outcomes_block_when_empty():
     assert "## 📈 어제 시그널 결과" not in md
 
 
+def test_render_includes_judge_first_then_debate():
+    s = _state()
+    s["optimists"]["NVDA"] = OptimistCase(
+        ticker="NVDA",
+        thesis="Optimist NVDA",
+        claims=[
+            {"claim": "매출 성장", "metric": "revenue", "value": "89B"},
+            {"claim": "FCF 강함", "metric": "FCF", "value": "24B"},
+        ],
+        confidence=78,
+        rebuttal="Margins remain robust",
+        counter_claims=[],
+    )
+    s["pessimists"]["NVDA"] = PessimistCase(
+        ticker="NVDA",
+        thesis="Pessimist NVDA",
+        claims=[],
+        confidence=60,
+        rebuttal="",
+        counter_claims=[],
+    )
+    md = render_report(s, prior_outcomes=[])
+    assert md.find("🎯 판정관 결정") < md.find("🟢 긍정론자")
+    assert md.find("결과를 뒤집을 조건") < md.find("왜 이렇게 결정했나")
+    # claims compact form: single bulleted line joining both metrics with ` · `
+    compact_lines = [line for line in md.splitlines() if "(revenue:" in line and "(FCF:" in line]
+    assert compact_lines, "expected compact claims line containing both metrics"
+    assert " · " in compact_lines[0]
+
+
 def test_render_shows_retry_banner_when_retried_tickers_present():
     s = _state()
     s["retried_tickers"] = ["AAPL"]
