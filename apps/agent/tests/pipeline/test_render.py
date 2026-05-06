@@ -66,12 +66,12 @@ def test_render_has_remaining_seven_table():
 
 def test_render_includes_outcomes_block_when_provided():
     outs = [
-        {"ticker": "NVDA", "signal": "BUY", "return_1d": 2.1, "spy_return_1d": -0.8},
-        {"ticker": "AAPL", "signal": "HOLD", "return_1d": 0.3, "spy_return_1d": -0.8},
+        {"ticker": "NVDA", "signal": "BUY", "return_7d": 2.1, "return_30d": 5.5, "spy_return_30d": -0.8},
+        {"ticker": "AAPL", "signal": "HOLD", "return_7d": 0.3, "return_30d": 1.0, "spy_return_30d": -0.8},
     ]
     md = render_report(_state(), prior_outcomes=outs)
     assert "## 📈 어제 시그널 결과" in md
-    assert "+2.1%" in md or "2.1%" in md
+    assert "+5.5%" in md or "5.5%" in md
 
 
 def test_render_skips_outcomes_block_when_empty():

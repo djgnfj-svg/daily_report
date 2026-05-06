@@ -32,17 +32,30 @@ def _format_remaining_table(state: PipelineState) -> str:
 
 
 def _format_outcomes(outcomes: list[dict]) -> str:
-    rows = ["| 종목 | 시그널 | 1일 수익률 | vs SPY |", "|---|---|---|---|"]
+    rows = [
+        "| 종목 | 시그널 | 7일 수익률 | 30일 수익률 | vs SPY (30d) |",
+        "|---|---|---|---|---|",
+    ]
+
+    def _fmt(x: float | None) -> str:
+        if x is None:
+            return "—"
+        return f"{'+' if x >= 0 else ''}{x:.1f}%"
+
     for o in outcomes:
-        r1 = o.get("return_1d")
-        rspy = o.get("spy_return_1d", 0.0)
-        if r1 is None:
+        r7 = o.get("return_7d")
+        r30 = o.get("return_30d")
+        if r7 is None and r30 is None:
             continue
-        excess = r1 - rspy
-        sign = "+" if r1 >= 0 else ""
+        rspy = o.get("spy_return_30d")
+        if r30 is not None and rspy is not None:
+            excess = r30 - rspy
+            excess_s = f"{'+' if excess >= 0 else ''}{excess:.1f}%p"
+        else:
+            excess_s = "—"
+        r30_cell = f"**{_fmt(r30)}**" if r30 is not None else "—"
         rows.append(
-            f"| {o['ticker']} | {o['signal']} | **{sign}{r1:.1f}%** | "
-            f"{'+' if excess >= 0 else ''}{excess:.1f}%p |"
+            f"| {o['ticker']} | {o['signal']} | {_fmt(r7)} | {r30_cell} | {excess_s} |"
         )
     return "\n".join(rows)
 
