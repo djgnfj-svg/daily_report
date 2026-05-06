@@ -1,22 +1,58 @@
 from morningbrief.pipeline.state import PipelineState
 
 
+def _format_claims(claims: list[dict]) -> str:
+    if not claims:
+        return ""
+    lines = []
+    for c in claims[:4]:
+        lines.append(f"  - {c.get('claim', '')} ({c.get('metric', '')}: {c.get('value', '')})")
+    return "\n".join(lines)
+
+
 def _format_top_section(state: PipelineState, ticker: str, idx: int) -> str:
     r = state["risks"][ticker]
     optimist = state["optimists"][ticker]
     pessimist = state["pessimists"][ticker]
     v = state["verdicts"][ticker]
-    last_close = state["universe"][ticker]["prices"][-1]["close"] if state["universe"][ticker]["prices"] else 0.0
+    last_close = (
+        state["universe"][ticker]["prices"][-1]["close"]
+        if state["universe"][ticker]["prices"]
+        else 0.0
+    )
+
+    opt_claims = _format_claims(optimist.claims)
+    pes_claims = _format_claims(pessimist.claims)
+
+    opt_block = f"**🟢 긍정론자 (conf {optimist.confidence})**\n> {optimist.thesis}\n"
+    if opt_claims:
+        opt_block += opt_claims + "\n"
+    if optimist.rebuttal:
+        opt_block += f"\n> 반박: {optimist.rebuttal}\n"
+
+    pes_block = f"**🔴 비관론자 (conf {pessimist.confidence})**\n> {pessimist.thesis}\n"
+    if pes_claims:
+        pes_block += pes_claims + "\n"
+    if pessimist.rebuttal:
+        pes_block += f"\n> 반박: {pessimist.rebuttal}\n"
+
+    judge_block = (
+        f"**🎯 판정관 결정 — {v.signal} (Confidence {v.confidence})**\n\n"
+        f"{v.thesis}\n\n"
+        f"> **결과를 뒤집을 조건**: {v.what_would_change_my_mind}\n"
+    )
+
+    critic = state.get("critics", {}).get(ticker) if state.get("critics") else None
+    if critic and getattr(critic, "note", ""):
+        judge_block += f"\n**🔍 검토관 노트**: {critic.note}\n"
 
     return (
         f"### {idx}. {ticker} — **{v.signal}** (Confidence {v.confidence})\n\n"
         f"> 어제 종가 ${last_close:.2f} · 변동성 {r.metrics.get('volatility_pct', 0):.1f}% · "
         f"MDD {r.metrics.get('max_drawdown_pct', 0):.1f}%\n\n"
-        f"**🟢 긍정론자**\n> {optimist.thesis}\n>\n> {optimist.rebuttal}\n\n"
-        f"**🔴 비관론자**\n> {pessimist.thesis}\n>\n> {pessimist.rebuttal}\n\n"
-        f"**🎯 판정관 결정 — {v.signal} (Confidence {v.confidence})**\n\n"
-        f"{v.thesis}\n\n"
-        f"> **결과를 뒤집을 조건**: {v.what_would_change_my_mind}\n\n"
+        f"{opt_block}\n"
+        f"{pes_block}\n"
+        f"{judge_block}\n"
         f"---\n"
     )
 
@@ -75,5 +111,10 @@ def render_report(state: PipelineState, prior_outcomes: list[dict]) -> str:
         parts.append(_format_outcomes(prior_outcomes))
         parts.append("\n")
     parts.append("---\n")
+    retried = state.get("retried_tickers") or []
+    if retried:
+        parts.append(
+            f"> ℹ️ 재토론 적용 종목 (판정관 confidence < 65): {', '.join(retried)}\n"
+        )
     parts.append("> 본 메일은 정보 제공 목적이며 투자 자문이 아닙니다. 데이터: SEC EDGAR, Yahoo Finance.\n")
     return "\n".join(parts)
